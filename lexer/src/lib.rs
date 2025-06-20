@@ -4,7 +4,7 @@ pub mod token;
 pub struct Lexer {
     input: String,
     curr_position: usize,
-    curr_read_position: usize,
+    next_read_position: usize,
     curr_char: char, // We currently supports ASCII character only
 }
 
@@ -15,12 +15,13 @@ impl Lexer {
     /// # Returns
     /// A new Lexer instance initialized with the input string.
     pub fn new(input: String) -> Self {
-        let l = Lexer {
+        let mut l = Lexer {
             input,
             curr_position: 0,
-            curr_read_position: 0,
+            next_read_position: 0,
             curr_char: '\0', // \0 => Null in ASCII
         };
+        l.read_char();
         l
     }
 
@@ -30,19 +31,19 @@ impl Lexer {
     /// position and read position. If we've reached the end of the input,
     /// it sets the current character to null ('\0').
     fn read_char(&mut self) {
-        if self.curr_position >= self.input.len() {
+        if self.next_read_position >= self.input.len() {
             self.curr_char = '\0'
         } else {
             let (index, character) = self
                 .input
                 .char_indices()
-                .skip(self.curr_read_position)
+                .skip(self.next_read_position)
                 .next()
                 .unwrap();
             self.curr_char = character;
             self.curr_position = index;
         }
-        self.curr_read_position += self.curr_char.len_utf8();
+        self.next_read_position += self.curr_char.len_utf8();
     }
 
     /// Peeks at the next character without advancing the lexer's position.
@@ -55,7 +56,7 @@ impl Lexer {
     ///
     /// The next character in the input, or '\0' if at the end of input.
     fn peek_char(&self) -> char {
-        if self.curr_read_position > self.input.len() {
+        if self.next_read_position > self.input.len() {
             '\0'
         } else {
             self.input
