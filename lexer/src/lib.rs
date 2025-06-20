@@ -140,7 +140,6 @@ impl Lexer {
                 }
             }
         };
-
         self.read_char();
         token
     }
