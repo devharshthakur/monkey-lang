@@ -31,6 +31,16 @@ pub struct Token {
 }
 
 impl Token {
+    /// Creates a new Token with the specified token type and literal value.
+    ///
+    /// # Arguments
+    ///
+    /// * `token_type` - The type of the token (e.g., IDENT, INT, PLUS, etc.)
+    /// * `literal` - The actual string value of the token
+    ///
+    /// # Returns
+    ///
+    /// A new Token instance with the provided type and literal.
     pub fn new(token_type: TokenType, literal: String) -> Self {
         Token {
             token_type,
@@ -39,7 +49,7 @@ impl Token {
     }
 }
 
-pub fn lookup_ident(ident: &str) -> TokenType {
+pub fn lookup_identifier(ident: &str) -> TokenType {
     match ident {
         "fn" => TokenType::FUNCTION,
         "let" => TokenType::LET,
