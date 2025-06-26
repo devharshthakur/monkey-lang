@@ -61,8 +61,8 @@ clippy: ## Run clippy linter
 	@echo "$(PURPLE)Running clippy linter...$(RESET)"
 	$(CARGO) clippy --all-targets -- -D warnings
 
-.PHONY: fmt
-fmt: ## Format all code with rustfmt
+.PHONY: format
+format: ## Format all code with rustfmt
 	@echo "$(CYAN)Formatting code...$(RESET)"
 	$(CARGO) fmt
 

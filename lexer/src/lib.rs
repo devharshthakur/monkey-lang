@@ -10,16 +10,16 @@ pub struct Lexer {
 
 impl Lexer {
     /// Creates a new Lexer instance with the given input string.
-    /// # Arguments
+    /// ## Arguments
     /// * `input` - The source code string to be tokenized
-    /// # Returns
+    /// ## Returns
     /// A new Lexer instance initialized with the input string.
     pub fn new(input: String) -> Self {
         let mut l = Lexer {
             input,
             curr_position: 0,
             next_read_position: 0,
-            curr_char: '\0', // \0 => Null in ASCII
+            curr_char: '\0', // \0 => Null
         };
         l.read_char();
         l
@@ -37,8 +37,7 @@ impl Lexer {
             let (index, character) = self
                 .input
                 .char_indices()
-                .skip(self.next_read_position)
-                .next()
+                .nth(self.next_read_position)
                 .unwrap();
             self.curr_char = character;
             self.curr_position = index;
@@ -52,19 +51,14 @@ impl Lexer {
     /// the current position. If we've reached the end of the input or if
     /// the read position is beyond the input length, it returns null ('\0').
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// The next character in the input, or '\0' if at the end of input.
     fn peek_char(&self) -> char {
-        if self.next_read_position > self.input.len() {
+        if self.next_read_position >= self.input.len() {
             '\0'
         } else {
-            self.input
-                .char_indices()
-                .skip(self.curr_position)
-                .next()
-                .map(|(_, c)| c)
-                .unwrap_or('\0')
+            self.input.chars().nth(self.next_read_position).unwrap()
         }
     }
 
@@ -78,16 +72,35 @@ impl Lexer {
         }
     }
 
+    /// Checks if the current character is a letter (alphabetic or underscore).
+    ///
+    /// This method returns true if the current character is an alphabetic character
+    /// or an underscore, which are valid characters for identifiers.
+    /// ## Returns
+    /// True if the current character is a letter, false otherwise.
+    fn is_letter(&self) -> bool {
+        self.curr_char.is_ascii_alphabetic() || self.curr_char == '_'
+    }
+
+    /// Checks if the current character is a digit.
+    ///
+    /// This method returns true if the current character is a digit (0-9).
+    /// ## Returns
+    /// True if the current character is a digit, false otherwise.
+    fn is_digit(&self) -> bool {
+        self.curr_char.is_ascii_digit()
+    }
+
     /// Reads an identifier (variable name, function name, etc.) from the current position.
     ///
     /// This method reads consecutive alphabetic characters and underscores,
     /// starting from the current position. It stops when it encounters a character
     /// that is not alphabetic or an underscore.
-    /// # Returns
+    /// ## Returns
     /// A String containing the identifier that was read.
     fn read_identifier(&mut self) -> String {
         let start_position = self.curr_position;
-        while self.curr_char.is_ascii_alphabetic() || self.curr_char == '_' {
+        while self.is_letter() {
             self.read_char();
         }
         self.input[start_position..self.curr_position].to_string()
@@ -97,11 +110,11 @@ impl Lexer {
     ///
     /// This method reads consecutive digit characters starting from the current position.
     /// It stops when it encounters a character that is not a digit.
-    /// # Returns
+    /// ## Returns
     /// A String containing the numeric literal that was read.
     fn read_number(&mut self) -> String {
         let start_position = self.curr_position;
-        while self.curr_char.is_ascii_digit() {
+        while self.is_digit() {
             self.read_char();
         }
         self.input[start_position..self.curr_position].to_string()
@@ -113,13 +126,31 @@ impl Lexer {
     /// It handles whitespace, identifiers, numbers, and various operators/delimiters.
     /// The lexer position is advanced as tokens are consumed.
     ///
-    /// # Returns
+    /// ## Returns
     /// A Token representing the next lexical element in the input.
     pub fn next_token(&mut self) -> Token {
         self.skip_white_space();
 
         let token = match self.curr_char {
             '=' => Token::new(TokenType::ASSIGN, self.curr_char.to_string()),
+            '-' => Token::new(TokenType::MINUS, self.curr_char.to_string()),
+            '!' => {
+                // Here we have two cases '!' or '!=' they both are separate tokens so need to check
+                if self.peek_char() == '=' {
+                    let ch1 = self.curr_char;
+                    let ch2 = self.peek_char();
+                    let literal = format!("{}{}", ch1, ch2);
+                    self.read_char();
+                    self.read_char();
+                    Token::new(TokenType::NOTEQ, literal)
+                } else {
+                    Token::new(TokenType::BANG, self.curr_char.to_string())
+                }
+            }
+            '/' => Token::new(TokenType::SLASH, self.curr_char.to_string()),
+            '*' => Token::new(TokenType::ASTERISK, self.curr_char.to_string()),
+            '<' => Token::new(TokenType::LT, self.curr_char.to_string()),
+            '>' => Token::new(TokenType::GT, self.curr_char.to_string()),
             '+' => Token::new(TokenType::PLUS, self.curr_char.to_string()),
             ',' => Token::new(TokenType::COMMA, self.curr_char.to_string()),
             ';' => Token::new(TokenType::SEMICOLON, self.curr_char.to_string()),
@@ -129,13 +160,13 @@ impl Lexer {
             '}' => Token::new(TokenType::RBRACE, self.curr_char.to_string()),
             '\0' => Token::new(TokenType::EOF, "".to_string()),
             _ => {
-                if self.curr_char.is_ascii_alphabetic() || self.curr_char == '_' {
+                if self.is_letter() {
                     let literal = self.read_identifier();
                     let token_type = lookup_identifier(&literal);
-                    Token::new(token_type, literal)
-                } else if self.curr_char.is_ascii_digit() {
+                    return Token::new(token_type, literal);
+                } else if self.is_digit() {
                     let literal = self.read_number();
-                    Token::new(TokenType::INT, literal)
+                    return Token::new(TokenType::INT, literal);
                 } else {
                     Token::new(TokenType::ILLEGAL, self.curr_char.to_string())
                 }

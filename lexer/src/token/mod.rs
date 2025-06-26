@@ -1,27 +1,39 @@
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
-    ILLEGAL,
-    EOF,
+    ILLEGAL, // Invalid token
+    EOF,     // End of file
 
     // Identifiers and literals
-    IDENT,
-    INT,
+    IDENT, // Variable names, function names, etc.
+    INT,   // Integer literals
 
-    // Opreators
-    ASSIGN,
-    PLUS,
+    // Operators
+    ASSIGN,   // "="
+    PLUS,     // "+"
+    MINUS,    // "-"
+    BANG,     // "!"
+    SLASH,    // "/"
+    ASTERISK, // "*"
+    LT,       // "<"
+    GT,       // ">"
+    NOTEQ,    // "!="
 
-    // Delimeters
-    COMMA,
-    SEMICOLON,
+    // Delimiters
+    COMMA,     // ","
+    SEMICOLON, // ";"
 
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
+    LPAREN, // "("
+    RPAREN, // ")"
+    LBRACE, // "{"
+    RBRACE, // "}"
 
-    FUNCTION,
-    LET,
+    FUNCTION, // "fn"
+    LET,      // "let"
+    IF,       // "if"
+    ELSE,     // "else"
+    RETURN,   // "return"
+    TRUE,     // "true"
+    FALSE,    // "false"
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -33,12 +45,12 @@ pub struct Token {
 impl Token {
     /// Creates a new Token with the specified token type and literal value.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `token_type` - The type of the token (e.g., IDENT, INT, PLUS, etc.)
     /// * `literal` - The actual string value of the token
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// A new Token instance with the provided type and literal.
     pub fn new(token_type: TokenType, literal: String) -> Self {
@@ -53,14 +65,11 @@ pub fn lookup_identifier(ident: &str) -> TokenType {
     match ident {
         "fn" => TokenType::FUNCTION,
         "let" => TokenType::LET,
-        "=" => TokenType::ASSIGN,
-        "+" => TokenType::PLUS,
-        "," => TokenType::COMMA,
-        ";" => TokenType::SEMICOLON,
-        "(" => TokenType::LPAREN,
-        ")" => TokenType::RPAREN,
-        "{" => TokenType::LBRACE,
-        "}" => TokenType::RBRACE,
+        "if" => TokenType::IF,
+        "else" => TokenType::ELSE,
+        "return" => TokenType::RETURN,
+        "true" => TokenType::TRUE,
+        "false" => TokenType::FALSE,
         _ => TokenType::IDENT,
     }
 }

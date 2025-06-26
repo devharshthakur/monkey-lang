@@ -4,7 +4,7 @@ First off, thank you for considering contributing to this project! I really appr
 
 ## Getting Started
 
-Before you start contributing, please set up the project locally. You can find detailed instructions in the [setup.md](./setup.md) file.
+Before you start contributing, please set up the project locally. You can find detailed instructions in the [setup.md](./SETUP.md) file.
 
 ## Project Context 📖
 
