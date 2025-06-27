@@ -21,11 +21,10 @@ pub enum TokenType {
     // Delimiters
     COMMA,     // ","
     SEMICOLON, // ";"
-
-    LPAREN, // "("
-    RPAREN, // ")"
-    LBRACE, // "{"
-    RBRACE, // "}"
+    LPAREN,    // "("
+    RPAREN,    // ")"
+    LBRACE,    // "{"
+    RBRACE,    // "}"
 
     FUNCTION, // "fn"
     LET,      // "let"
