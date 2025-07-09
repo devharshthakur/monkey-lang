@@ -9,7 +9,7 @@ pub trait AsAny: Any {
 
 /// `Node` is the basic building block of our Abstract Syntax Tree.
 /// Every node in the AST must implement this trait.
-pub trait Node: std::fmt::Debug + AsAny {
+pub trait Node: std::fmt::Debug + Any {
     fn token_literal(&self) -> String;
 
     fn string(&self) -> String {
@@ -47,6 +47,7 @@ impl Clone for Box<dyn Expression> {
     }
 }
 
+// Blanket implementation for any type that implements Any
 impl<T: Any> AsAny for T {
     fn as_any(&self) -> &dyn Any {
         self

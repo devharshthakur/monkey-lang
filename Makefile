@@ -1,79 +1,47 @@
-# Makefile for monkey-lang Rust project
+# Makefile for monkey-lang project setup and run
 
-# Variables
-CARGO := cargo
-
-# Colors for output
+CYAN := \033[0;36m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
-BLUE := \033[0;34m
-PURPLE := \033[0;35m
-CYAN := \033[0;36m
 RESET := \033[0m
 
-# Default target
-.DEFAULT_GOAL := help
-
-# Help target
 .PHONY: help
 help: ## Show this help message
 	@echo "$(CYAN)Available targets:$(RESET)"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(GREEN)%-20s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
-	@echo "$(YELLOW)Usage: make <target>$(RESET)"
+	@echo "$(CYAN)Usage: make <target>$(RESET)"
 
-# =============================================================================
-# BASIC COMMANDS
-# =============================================================================
+.PHONY: check-rust
+check-rust: ## Check if Rust and Cargo are installed, prompt to install if missing
+	@echo "$(CYAN)Checking for Rust and Cargo...$(RESET)"
+	@if ! command -v rustc >/dev/null 2>&1; then \
+		echo "$(YELLOW)Rust is not installed.$(RESET)"; \
+		echo "You need Rust to build and run this project."; \
+		read -p "Would you like to install Rust now using rustup? [y/N] " -n 1 -r; echo; \
+		if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh; \
+			echo "$(GREEN)Rust installed successfully!$(RESET)"; \
+		else \
+			echo "$(YELLOW)Rust installation cancelled. Please install Rust manually from https://rustup.rs/$(RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(GREEN)Rust and Cargo are already installed.$(RESET)"; \
+	fi
 
-.PHONY: build
-build: ## Build all crates in debug mode
-	@echo "$(BLUE)Building...$(RESET)"
-	$(CARGO) build
-
-.PHONY: build-release
-build-release: ## Build all crates in release mode
-	@echo "$(BLUE)Building for release...$(RESET)"
-	$(CARGO) build --release
-
-.PHONY: test
-test: ## Run all tests
-	@echo "$(GREEN)Running tests...$(RESET)"
-	$(CARGO) test
 
 .PHONY: run
-run: ## Run the main binary
-	@echo "$(GREEN)Running main binary...$(RESET)"
-	$(CARGO) run
+run: check-rust ## Run the project (cargo run in cli/)
+	@echo "$(CYAN)Ready to run the project (cargo run --manifest-path cli/Cargo.toml).$(RESET)"
+	@read -p "Proceed to run the project? [y/N] " -n 1 -r; echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		cargo run --manifest-path cli/Cargo.toml; \
+	else \
+		echo "$(YELLOW)Run cancelled.$(RESET)"; \
+	fi
 
-.PHONY: clean
-clean: ## Clean all build artifacts
-	@echo "$(YELLOW)Cleaning build artifacts...$(RESET)"
-	$(CARGO) clean
-
-# =============================================================================
-# LINTING & FORMATTING
-# =============================================================================
-
-.PHONY: clippy
-clippy: ## Run clippy linter
-	@echo "$(PURPLE)Running clippy linter...$(RESET)"
-	$(CARGO) clippy --all-targets -- -D warnings
-
-.PHONY: format
-format: ## Format all code with rustfmt
-	@echo "$(CYAN)Formatting code...$(RESET)"
-	$(CARGO) fmt
-
-.PHONY: check
-check: ## Check if code compiles without producing output
-	@echo "$(BLUE)Checking if code compiles...$(RESET)"
-	$(CARGO) check
-
-# =============================================================================
-# CI / WORKFLOWS
-# =============================================================================
-
-.PHONY: ci
-ci: fmt check clippy test ## Run all checks for CI 
+.PHONY: setup
+setup: check-rust run ## Full setup: check Rust, install dependencies, and run the project
+	@echo "$(GREEN)Setup complete!$(RESET)" 
