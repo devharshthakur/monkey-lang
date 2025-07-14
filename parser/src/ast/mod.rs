@@ -1,6 +1,8 @@
 use lexer::token::Token;
 use std::any::Any;
 
+/// Trait for converting types to `Any` for runtime type checking.
+/// This allows downcasting trait objects to concrete types.
 pub trait AsAny: Any {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
@@ -8,13 +10,21 @@ pub trait AsAny: Any {
 
 /// `Node` is the basic building block of our Abstract Syntax Tree.
 /// Every node in the AST must implement this trait.
+///
+/// This trait provides common functionality for all AST nodes including:
+/// - Token literal representation
+/// - String representation for debugging/display
+/// - Cloning capability
 pub trait Node: std::fmt::Debug + Any {
+    /// Returns the literal string of the token that represents this node
     fn token_literal(&self) -> String;
 
+    /// Returns a string representation of the node for debugging and display
     fn string(&self) -> String {
         self.token_literal()
     }
 
+    /// Creates a boxed clone of this node
     fn clone_box(&self) -> Box<dyn Node>;
 }
 
@@ -24,8 +34,15 @@ impl Clone for Box<dyn Node> {
     }
 }
 
+/// Represents a statement in the AST.
+/// Statements are the top-level constructs in a program that perform actions
+/// but don't produce values (unlike expressions).
 pub trait Statement: Node + AsAny {
+    /// Marks this node as a statement node.
+    /// This is a marker method used for type safety and clarity.
     fn statement_node(&self);
+
+    /// Creates a boxed clone of this statement
     fn clone_box(&self) -> Box<dyn Statement>;
 }
 
@@ -35,8 +52,15 @@ impl Clone for Box<dyn Statement> {
     }
 }
 
+/// Represents an expression in the AST.
+/// Expressions are constructs that produce values and can be evaluated.
+/// Unlike statements, expressions can be used in contexts where a value is expected.
 pub trait Expression: Node {
+    /// Marks this node as an expression node.
+    /// This is a marker method used for type safety and clarity.
     fn expression_node(&self);
+
+    /// Creates a boxed clone of this expression
     fn clone_box(&self) -> Box<dyn Expression>;
 }
 
@@ -148,4 +172,45 @@ impl Expression for Identifier {
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
+}
+
+#[derive(Debug)]
+pub struct ReturnStatement {
+    pub token: Token,
+    pub return_value: Option<Box<dyn Expression>>, // We use `Option` because we will skip parsing the actual expression for now.
+}
+
+impl Node for ReturnStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn clone_box(&self) -> Box<dyn Node> {
+        Box::new(ReturnStatement {
+            token: self.token.clone(),
+            return_value: self.return_value.clone(),
+        })
+    }
+
+    fn string(&self) -> String {
+        let mut s = String::new();
+        s.push_str(&self.token_literal());
+        s.push_str(" ");
+        if let Some(return_value) = &self.return_value {
+            s.push_str(&return_value.string());
+        }
+        s.push_str(";");
+        s
+    }
+}
+
+impl Statement for ReturnStatement {
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ReturnStatement {
+            token: self.token.clone(),
+            return_value: self.return_value.clone(),
+        })
+    }
+
+    fn statement_node(&self) {} // This is to statisfy the `Statement` trait for now
 }
