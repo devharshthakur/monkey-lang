@@ -1,5 +1,4 @@
 use lexer::token::Token;
-use lexer::token::TokenType;
 use std::any::Any;
 
 pub trait AsAny: Any {
@@ -25,7 +24,7 @@ impl Clone for Box<dyn Node> {
     }
 }
 
-pub trait Statement: Node {
+pub trait Statement: Node + AsAny {
     fn statement_node(&self);
     fn clone_box(&self) -> Box<dyn Statement>;
 }

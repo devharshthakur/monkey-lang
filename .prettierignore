@@ -59,7 +59,6 @@ Cargo.lock
 
 # Documentation
 docs/
-*.md
 
 # Config files that shouldn't be formatted
 *.toml

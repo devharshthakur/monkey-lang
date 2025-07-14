@@ -1,8 +1,5 @@
-use crate::ast::AsAny;
-use crate::ast::Expression;
 use crate::ast::Identifier;
 use crate::ast::LetStatement;
-use crate::ast::Program;
 use crate::ast::Statement;
 use lexer::token::Token;
 use lexer::token::TokenType;
@@ -233,10 +230,10 @@ mod tests {
         // 2. Downcast the `Statement` trait object to a concrete `LetStatement` type.
         // `s.as_any().downcast_ref::<ast::LetStatement>()` attempts to cast the trait object
         // back to its concrete type. It returns `Some(&LetStatement)` if successful, `None` otherwise.
-        let let_stmt = match s.as_any().downcast_ref::<ast::LetStatement>() {
+        let let_stmt = match (**s).as_any().downcast_ref::<ast::LetStatement>() {
             Some(ls) => ls,
             None => {
-                eprintln!("s not ast::LetStatement. got={:?}", s); // Print debug info for statement
+                eprintln!("s not ast::LetStatement. got={:?}", &**s);
                 return false;
             }
         };
@@ -270,10 +267,10 @@ mod tests {
         // Input Monkey source code containing multiple `let` statements.
         // `r#"`..."#` is a raw string literal, useful for multi-line strings without needing to escape newlines.
         let input = r#"
-let x = 5;
-let y = 10;
-let foobar = 838383;
-"#
+                            let x = 5;
+                            let y = 10;
+                            let foobar = 838383;
+                            "#
         .to_string(); // Convert `&str` to `String` because `Lexer::new` expects owned `String`.
 
         // Create a lexer and then a parser instance with the input.

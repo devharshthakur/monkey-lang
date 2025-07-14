@@ -17,6 +17,7 @@ pub enum TokenType {
     LT,       // "<"
     GT,       // ">"
     NOTEQ,    // "!="
+    EQ,       // "=="
 
     // Delimiters
     COMMA,     // ","
