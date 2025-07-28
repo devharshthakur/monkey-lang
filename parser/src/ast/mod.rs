@@ -28,12 +28,6 @@ pub trait Node: std::fmt::Debug + Any {
     fn clone_box(&self) -> Box<dyn Node>;
 }
 
-impl Clone for Box<dyn Node> {
-    fn clone(&self) -> Self {
-        self.clone_box()
-    }
-}
-
 /// Represents a statement in the AST.
 /// Statements are the top-level constructs in a program that perform actions
 /// but don't produce values (unlike expressions).
@@ -46,12 +40,6 @@ pub trait Statement: Node + AsAny {
     fn clone_box(&self) -> Box<dyn Statement>;
 }
 
-impl Clone for Box<dyn Statement> {
-    fn clone(&self) -> Box<dyn Statement> {
-        Statement::clone_box(&**self)
-    }
-}
-
 /// Represents an expression in the AST.
 /// Expressions are constructs that produce values and can be evaluated.
 /// Unlike statements, expressions can be used in contexts where a value is expected.
@@ -62,6 +50,50 @@ pub trait Expression: Node {
 
     /// Creates a boxed clone of this expression
     fn clone_box(&self) -> Box<dyn Expression>;
+}
+
+#[derive(Debug, Clone)]
+pub struct Program {
+    pub statements: Vec<Box<dyn Statement>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LetStatement {
+    pub token: Token,
+    pub name: Identifier,
+    pub value: Option<Box<dyn Expression>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Identifier {
+    pub token: Token,
+    pub value: String,
+}
+
+#[derive(Debug)]
+pub struct ReturnStatement {
+    pub token: Token,
+    pub return_value: Option<Box<dyn Expression>>, // We use `Option` because we will skip parsing the actual expression for now.
+}
+
+#[derive(Debug, Clone)]
+pub struct ExpressionStatement {
+    pub token: Token,                            // The first token of expression
+    pub expression: Option<Box<dyn Expression>>, // The actual expression
+}
+
+// Implementations
+
+impl Clone for Box<dyn Node> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
+
+impl Clone for Box<dyn Statement> {
+    fn clone(&self) -> Box<dyn Statement> {
+        Statement::clone_box(&**self)
+    }
 }
 
 impl Clone for Box<dyn Expression> {
@@ -79,11 +111,6 @@ impl<T: Any> AsAny for T {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Program {
-    pub statements: Vec<Box<dyn Statement>>,
 }
 
 impl Node for Program {
@@ -106,13 +133,6 @@ impl Node for Program {
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct LetStatement {
-    pub token: Token,
-    pub name: Identifier,
-    pub value: Option<Box<dyn Expression>>,
 }
 
 impl Node for LetStatement {
@@ -146,12 +166,6 @@ impl Statement for LetStatement {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Identifier {
-    pub token: Token,
-    pub value: String,
-}
-
 impl Node for Identifier {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
@@ -172,12 +186,6 @@ impl Expression for Identifier {
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
-}
-
-#[derive(Debug)]
-pub struct ReturnStatement {
-    pub token: Token,
-    pub return_value: Option<Box<dyn Expression>>, // We use `Option` because we will skip parsing the actual expression for now.
 }
 
 impl Node for ReturnStatement {
@@ -212,12 +220,6 @@ impl Statement for ReturnStatement {
         })
     }
     fn statement_node(&self) {} // This is to statisfy the `Statement` trait for now
-}
-
-#[derive(Debug, Clone)]
-pub struct ExpressionStatement {
-    pub token: Token,                            // The first token of expression
-    pub expression: Option<Box<dyn Expression>>, // The actual expression
 }
 
 impl Statement for ExpressionStatement {
