@@ -211,6 +211,36 @@ impl Statement for ReturnStatement {
             return_value: self.return_value.clone(),
         })
     }
-
     fn statement_node(&self) {} // This is to statisfy the `Statement` trait for now
+}
+
+#[derive(Debug, Clone)]
+pub struct ExpressionStatement {
+    pub token: Token,                            // The first token of expression
+    pub expression: Option<Box<dyn Expression>>, // The actual expression
+}
+
+impl Statement for ExpressionStatement {
+    fn statement_node(&self) {}
+
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(self.clone())
+    }
+}
+
+impl Node for ExpressionStatement {
+    fn clone_box(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
+    }
+
+    fn string(&self) -> String {
+        self.expression
+            .as_ref()
+            .map(|exp| exp.string())
+            .unwrap_or_else(|| "".to_string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
 }
