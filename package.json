@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "format": "prettier --write .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "format": "prettier --write ."
   },
   "author": "Harsh Thakur",
   "license": "MIT",

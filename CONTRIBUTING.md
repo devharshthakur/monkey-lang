@@ -4,7 +4,9 @@ First off, thank you for considering contributing to this project! I really appr
 
 ## Getting Started
 
-Before you start contributing, please set up the project locally by ensuring you have Rust and Cargo installed. The [Makefile](./Makefile) is provided for developer convenience to run and manage the project. As the project grows, more commands may be added to the Makefile to help with development and automation.
+Before you start contributing, please set up the project locally by ensuring you have Rust and Cargo installed. See the [setup guide](./docs/setup.md) for detailed installation instructions. The [Makefile](./Makefile) is provided for developer convenience to run and manage the project. As the project grows, more commands may be added to the Makefile to help with development and automation.
+
+For an overview of the project's current implementation status, check the [progress checklist](./docs/checklist.md).
 
 ## Project Context
 
