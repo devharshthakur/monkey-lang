@@ -261,11 +261,9 @@ mod tests {
     }
 
     /// The main test function for `let` statements.
-    /// `#[test]` attribute marks this as a unit test to be run by `cargo test`.
     #[test]
     fn test_let_statements() {
         // Input Monkey source code containing multiple `let` statements.
-        // `r#"`..."#` is a raw string literal, useful for multi-line strings without needing to escape newlines.
         let input = r#"
                             let x = 5;
                             let y = 10;
