@@ -9,12 +9,12 @@ run:
 # Format code
 format:
     cargo fmt
-    pnpm format
+    biome format --write .
 
 # Check formatting
 format-check:
     cargo fmt --check
-    pnpm format --check
+    biome format .
 
 # Run tests
 test:
