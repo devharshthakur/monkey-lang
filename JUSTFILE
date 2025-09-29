@@ -1,6 +1,4 @@
 # List all available commands
-default:
-    @just --list
 
 # Run the project
 run:
@@ -9,12 +7,18 @@ run:
 # Format code
 format:
     cargo fmt
-    biome format --write .
+    prettier --write .
+
+# Alias: fmt
+fmt: format
 
 # Check formatting
 format-check:
     cargo fmt --check
-    biome format .
+    prettier --check .
+
+# Alias: fmtc
+fmtc: format-check
 
 # Run tests
 test:

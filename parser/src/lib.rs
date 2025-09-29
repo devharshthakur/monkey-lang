@@ -1,3 +1,15 @@
+//! Parser for the Monkey language producing an Abstract Syntax Tree (AST).
+//!
+//! This crate exposes:
+//! - The `ast` module with core AST node types and traits.
+//! - The `Parser` struct that turns tokens from the `lexer` crate into an AST.
+//!
+//! Parsing approach:
+//! - Maintains a two-token lookahead (`curr_token`, `peek_token`).
+//! - Provides helpers like `expect_peek`, `curr_token_is`, and `peek_token_is`.
+//! - Reports user-friendly errors via the `errors` vector.
+//! - Currently supports parsing `let` statements and collects them in `Program`.
+
 use crate::ast::Identifier;
 use crate::ast::LetStatement;
 use crate::ast::Statement;

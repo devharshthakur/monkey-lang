@@ -63,8 +63,6 @@ docs/
 # Config files that shouldn't be formatted
 *.toml
 *.yml
-*.yaml
-*.json
 
 # License files
 LICENSE*
