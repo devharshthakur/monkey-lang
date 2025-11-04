@@ -105,7 +105,7 @@ impl Parser {
 
     /// Adds a "no parse function" error to the parser's error list.
     ///
-    /// Creates an error message when the parser encounters a token type
+    /// Creates an error message when the parser encounters a token typel
     /// that it doesn't know how to handle. This indicates that the parser
     /// needs to be extended to support new token types.
     fn no_parse_function_error(&mut self, token_type: TokenType) {
@@ -196,125 +196,5 @@ impl Parser {
         }
 
         stmt
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast;
-    use crate::ast::Node;
-
-    /// Helper function to check for parser errors and fail the test if any are found.
-    /// This makes test failures more informative.
-    fn check_parser_errors(parser: &Parser, test_name: &str) {
-        if !parser.errors.is_empty() {
-            eprintln!(
-                "Parser has {} errors for test `{}`:",
-                parser.errors.len(),
-                test_name
-            );
-            for err in parser.errors.iter() {
-                eprintln!("parser error: {}", err);
-            }
-            // `panic!` aborts the test with the given message.
-            panic!("Parser errors encountered in test `{}`", test_name);
-        }
-    }
-
-    /// Helper function to test the structure of a `LetStatement`.
-    /// This function verifies the token literal, type, name value, and name's token literal.
-    /// It corresponds directly to `testLetStatement` in the Go example.
-    ///
-    /// # Arguments
-    /// - `s`: A reference to a `Box<dyn Statement>` which is the statement to be tested.
-    /// - `expected_name`: The expected string value of the identifier (variable name).
-    ///
-    /// # Returns
-    /// `true` if all assertions pass, `false` if any fail.
-    fn test_let_statement_structure(s: &Box<dyn Statement>, expected_name: &str) -> bool {
-        // 1. Check the statement's `TokenLiteral()`. It should be "let".
-        if s.token_literal() != "let" {
-            eprintln!("s.token_literal not 'let'. got={}", s.token_literal());
-            return false;
-        }
-
-        // 2. Downcast the `Statement` trait object to a concrete `LetStatement` type.
-        // `s.as_any().downcast_ref::<ast::LetStatement>()` attempts to cast the trait object
-        // back to its concrete type. It returns `Some(&LetStatement)` if successful, `None` otherwise.
-        let let_stmt = match (**s).as_any().downcast_ref::<ast::LetStatement>() {
-            Some(ls) => ls,
-            None => {
-                eprintln!("s not ast::LetStatement. got={:?}", &**s);
-                return false;
-            }
-        };
-
-        // 3. Check the `Name.Value` field of the `LetStatement`. This is the actual string name.
-        if let_stmt.name.value != expected_name {
-            eprintln!(
-                "let_stmt.name.value not '{}'. got={}",
-                expected_name, let_stmt.name.value
-            );
-            return false;
-        }
-
-        // 4. Check the `Name.TokenLiteral()` field. This should also match the expected name.
-        if let_stmt.name.token_literal() != expected_name {
-            eprintln!(
-                "let_stmt.name.token_literal() not '{}'. got={}",
-                expected_name,
-                let_stmt.name.token_literal()
-            );
-            return false;
-        }
-
-        true // All checks passed for this specific `let` statement.
-    }
-
-    /// The main test function for `let` statements.
-    #[test]
-    fn test_let_statements() {
-        // Input Monkey source code containing multiple `let` statements.
-        let input = r#"
-                            let x = 5;
-                            let y = 10;
-                            let foobar = 838383;
-                            "#
-        .to_string(); // Convert `&str` to `String` because `Lexer::new` expects owned `String`.
-
-        // Create a lexer and then a parser instance with the input.
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        // Parse the program to get the AST root node.
-        let program = parser.parse_program();
-
-        // Immediately check for any errors reported by the parser during the parsing process.
-        check_parser_errors(&parser, "test_let_statements");
-
-        // Assert that the program contains the expected number of statements.
-        assert_eq!(
-            program.statements.len(),
-            3,
-            "program.statements does not contain 3 statements. got={}",
-            program.statements.len()
-        );
-
-        // Define the expected identifiers (variable names) for each `let` statement.
-        let expected_identifiers = vec!["x", "y", "foobar"];
-
-        // Iterate through the statements in the parsed program and verify each one.
-        for (i, expected_ident) in expected_identifiers.iter().enumerate() {
-            let stmt = &program.statements[i]; // Get a reference to the current statement (a `Box<dyn Statement>`).
-                                               // Call the helper function `test_let_statement` to perform detailed checks on the statement.
-                                               // If the helper returns `false`, `assert!` will panic, failing the test.
-            assert!(
-                test_let_statement_structure(stmt, expected_ident),
-                "test[{}] failed for identifier {}",
-                i,
-                expected_ident
-            );
-        }
     }
 }

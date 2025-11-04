@@ -13,24 +13,24 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 
 ## Running & Development
 
-A `Makefile` is provided for developer convenience. You can use it to run the project and perform other common tasks. As the project progresses, more commands may be added to the Makefile to help with development and automation.
+A `Justfile` is provided for developer convenience. You can use it to run the project and perform other common tasks. As the project progresses, more commands may be added to the Justfile to help with development and automation.
 
 To run the project:
 
 ```bash
-make
+just
 ```
 
 To see all available commands:
 
 ```bash
-make help
+just --list
 ```
 
 To format the codebase:
 
 ```bash
-make format
+just format
 ```
 
 ## Progress Tracking
