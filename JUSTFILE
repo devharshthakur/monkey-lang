@@ -24,6 +24,13 @@ fmtc: format-check
 test:
     cargo test
 
+# Lint code
+lint:
+    cargo clippy
+
+# Alias: l
+l: lint
+
 # Build the project
 build:
     cargo build

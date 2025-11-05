@@ -32,23 +32,6 @@ pub struct Parser {
 }
 
 impl Parser {
-    /// Creates a new parser instance with the given lexer.
-    ///
-    /// Initializes the parser with empty tokens and then reads the first two tokens
-    /// to set up the lookahead buffer. This ensures the parser always has
-    /// both current and peek tokens available for parsing decisions.
-    pub fn new(l: Lexer) -> Self {
-        let mut p = Parser {
-            l,
-            curr_token: Token::new(TokenType::EOF, "".to_string()),
-            peek_token: Token::new(TokenType::EOF, "".to_string()),
-            errors: Vec::new(),
-        };
-        p.next_token();
-        p.next_token();
-        p
-    }
-
     /// Advances the token buffer by one position.
     ///
     /// Moves the peek token to the current token position and reads
@@ -85,7 +68,7 @@ impl Parser {
             self.next_token();
             true
         } else {
-            self.peek_error(token_type);
+            self.display_peek_error(token_type);
             false
         }
     }
@@ -95,7 +78,7 @@ impl Parser {
     /// Creates a descriptive error message indicating what token type was expected
     /// versus what was actually found in the peek position. This helps with
     /// debugging parsing issues.
-    fn peek_error(&mut self, token_type: TokenType) {
+    fn display_peek_error(&mut self, token_type: TokenType) {
         let msg = format!(
             "Expected next token be {:?}, got {:?} instead",
             token_type, self.peek_token.token_type
@@ -105,15 +88,32 @@ impl Parser {
 
     /// Adds a "no parse function" error to the parser's error list.
     ///
-    /// Creates an error message when the parser encounters a token typel
+    /// Creates an error message when the parser encounters a token type
     /// that it doesn't know how to handle. This indicates that the parser
     /// needs to be extended to support new token types.
-    fn no_parse_function_error(&mut self, token_type: TokenType) {
+    fn display_no_parse_function_error(&mut self, token_type: TokenType) {
         let msg = format!(
             "No parse funtion for token type {:?} found for token `{}`",
             token_type, self.curr_token.literal
         );
         self.errors.push(msg);
+    }
+
+    /// Creates a new parser instance with the given lexer.
+    ///
+    /// Initializes the parser with empty tokens and then reads the first two tokens
+    /// to set up the lookahead buffer. This ensures the parser always has
+    /// both current and peek tokens available for parsing decisions.
+    pub fn new(l: Lexer) -> Self {
+        let mut p = Parser {
+            l,
+            curr_token: Token::new(TokenType::EOF, "".to_string()),
+            peek_token: Token::new(TokenType::EOF, "".to_string()),
+            errors: Vec::new(),
+        };
+        p.next_token();
+        p.next_token();
+        p
     }
 
     /// Returns a reference to the parser's error list.
@@ -155,7 +155,7 @@ impl Parser {
         match self.curr_token.token_type {
             TokenType::LET => Some(Box::new(self.parse_let_statement())),
             _ => {
-                self.no_parse_function_error(self.curr_token.token_type);
+                self.display_no_parse_function_error(self.curr_token.token_type);
                 None
             }
         }

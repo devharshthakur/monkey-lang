@@ -37,8 +37,7 @@ impl Lexer {
             let (index, character) = self
                 .input
                 .char_indices()
-                .skip(self.next_read_position)
-                .next()
+                .find(|(idx, _)| *idx == self.next_read_position)
                 .unwrap();
             self.curr_char = character;
             self.curr_position = index;
@@ -60,9 +59,9 @@ impl Lexer {
             '\0'
         } else {
             self.input
-                .chars()
-                .skip(self.next_read_position)
-                .next()
+                .char_indices()
+                .find(|(idx, _)| *idx == self.next_read_position)
+                .map(|(_, ch)| ch)
                 .unwrap()
         }
     }
