@@ -10,7 +10,7 @@
 use lexer::token::Token;
 
 pub trait Node {
-    fn token_literal(&self) -> String;
+    fn token_literal(&self) -> &str;
 }
 
 pub trait Statement: Node {
@@ -26,11 +26,11 @@ pub struct Program {
 }
 
 impl Node for Program {
-    fn token_literal(&self) -> String {
+    fn token_literal(&self) -> &str {
         if !self.statements.is_empty() {
             self.statements[0].token_literal()
         } else {
-            "".to_string()
+            ""
         }
     }
 }
@@ -40,8 +40,8 @@ pub struct Identifier {
 }
 
 impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &str {
+        &self.token.literal
     }
 }
 
@@ -55,8 +55,8 @@ pub struct LetStatement {
 }
 
 impl Node for LetStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &str {
+        &self.token.literal
     }
 }
 
