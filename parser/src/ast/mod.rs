@@ -19,18 +19,18 @@ pub enum Statement {
     Let(LetStatement),
 }
 
+/// Enum representing all expression types in the AST.
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Identifier(Identifier),
+}
+
 impl Node for Statement {
     fn token_literal(&self) -> &str {
         match self {
             Statement::Let(stmt) => stmt.token_literal(),
         }
     }
-}
-
-/// Enum representing all expression types in the AST.
-#[derive(Debug, Clone)]
-pub enum Expression {
-    Identifier(Identifier),
 }
 
 impl Node for Expression {
