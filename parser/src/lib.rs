@@ -149,11 +149,11 @@ impl Parser {
     ///
     /// Uses the current token to determine what type of statement to parse.
     /// Currently supports LET statements. If an unsupported token type is
-    /// encountered, adds an error and returns None. Returns a boxed Statement
-    /// trait object for polymorphic statement handling.
-    fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
+    /// encountered, adds an error and returns None. Returns a Statement enum
+    /// variant for type-safe statement handling.
+    fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token.token_type {
-            TokenType::LET => Some(Box::new(self.parse_let_statement())),
+            TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             _ => {
                 self.display_no_parse_function_error(self.curr_token.token_type);
                 None
@@ -202,7 +202,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{LetStatement, Node};
+    use crate::ast::Node;
 
     /// Tests parsing of multiple let statements.
     ///
@@ -266,22 +266,11 @@ let foobar = 838383;
     /// Helper function to test a single let statement.
     ///
     /// This function validates that a statement is a `LetStatement` and that
-    /// its identifier matches the expected name. It uses downcasting to convert
-    /// from the trait object (`Box<dyn Statement>`) to the concrete type
-    /// (`LetStatement`) so we can access type-specific fields.
-    ///
-    /// # Why Downcasting?
-    /// Since `Program.statements` stores `Box<dyn Statement>` (trait objects),
-    /// we lose compile-time knowledge of the concrete type. Downcasting allows
-    /// us to recover the concrete type at runtime to access fields like `name.value`.
-    ///
-    /// # Alternative Approach
-    /// Consider using enums (`Statement::Let(LetStatement)`) instead of trait
-    /// objects for better compile-time safety and performance. See the AST
-    /// module documentation for more details.
+    /// its identifier matches the expected name. It uses pattern matching to
+    /// extract the `LetStatement` from the `Statement` enum variant.
     ///
     /// # Parameters
-    /// - `s`: A reference to a boxed Statement trait object to test
+    /// - `s`: A reference to a Statement enum to test
     /// - `name`: The expected identifier name (e.g., "x", "y", "foobar")
     ///
     /// # Returns
@@ -290,10 +279,10 @@ let foobar = 838383;
     ///
     /// # Validations
     /// 1. Verifies the statement's token literal is "let"
-    /// 2. Confirms the statement is actually a `LetStatement` (via downcast)
+    /// 2. Confirms the statement is actually a `LetStatement` (via pattern matching)
     /// 3. Checks that the identifier's value matches the expected name
     /// 4. Verifies the identifier's token literal matches the expected name
-    fn test_let_statement(s: &Box<dyn Statement>, name: &str) -> bool {
+    fn test_let_statement(s: &Statement, name: &str) -> bool {
         // Verify the statement's token literal is "let"
         assert_eq!(
             s.token_literal(),
@@ -302,13 +291,10 @@ let foobar = 838383;
             s.token_literal()
         );
 
-        // Downcast from trait object to concrete LetStatement type
-        // This is necessary because we store statements as Box<dyn Statement>
-        // and need to access LetStatement-specific fields (like .name)
-        let let_stmt = s.as_any().downcast_ref::<LetStatement>().expect(&format!(
-            "s not *ast.LetStatement. got={:?}",
-            std::any::type_name::<dyn Statement>()
-        ));
+        // Extract LetStatement from Statement enum using pattern matching
+        let let_stmt = match s {
+            Statement::Let(stmt) => stmt,
+        };
 
         // Verify the identifier's value matches the expected name
         assert_eq!(

@@ -8,23 +8,41 @@
 //! Contributors should extend these definitions when adding new language forms.
 
 use lexer::token::Token;
-use std::any::Any;
 
 pub trait Node {
     fn token_literal(&self) -> &str;
 }
 
-pub trait Statement: Node + Any {
-    fn statement_node(&self);
-    fn as_any(&self) -> &dyn Any;
+/// Enum representing all statement types in the AST.
+#[derive(Debug, Clone)]
+pub enum Statement {
+    Let(LetStatement),
 }
 
-pub trait Expression: Node {
-    fn expression_node(&self);
+impl Node for Statement {
+    fn token_literal(&self) -> &str {
+        match self {
+            Statement::Let(stmt) => stmt.token_literal(),
+        }
+    }
+}
+
+/// Enum representing all expression types in the AST.
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Identifier(Identifier),
+}
+
+impl Node for Expression {
+    fn token_literal(&self) -> &str {
+        match self {
+            Expression::Identifier(ident) => ident.token_literal(),
+        }
+    }
 }
 
 pub struct Program {
-    pub statements: Vec<Box<dyn Statement>>,
+    pub statements: Vec<Statement>,
 }
 
 impl Node for Program {
@@ -36,6 +54,8 @@ impl Node for Program {
         }
     }
 }
+
+#[derive(Debug, Clone)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -47,24 +67,15 @@ impl Node for Identifier {
     }
 }
 
-impl Expression for Identifier {
-    fn expression_node(&self) {}
-}
+#[derive(Debug, Clone)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    pub value: Option<Box<dyn Expression>>,
+    pub value: Option<Expression>,
 }
 
 impl Node for LetStatement {
     fn token_literal(&self) -> &str {
         &self.token.literal
-    }
-}
-
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
