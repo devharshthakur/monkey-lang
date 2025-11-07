@@ -8,13 +8,15 @@
 //! Contributors should extend these definitions when adding new language forms.
 
 use lexer::token::Token;
+use std::any::Any;
 
 pub trait Node {
     fn token_literal(&self) -> &str;
 }
 
-pub trait Statement: Node {
+pub trait Statement: Node + Any {
     fn statement_node(&self);
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub trait Expression: Node {
@@ -62,4 +64,7 @@ impl Node for LetStatement {
 
 impl Statement for LetStatement {
     fn statement_node(&self) {}
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }

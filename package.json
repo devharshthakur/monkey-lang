@@ -1,18 +1,17 @@
 {
   "name": "monkey-lang",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Monkey programming language interpreter and compiler",
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "author": "Harsh Thakur",
   "license": "MIT",
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.20.0",
   "devDependencies": {
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.10.0",
     "prettier": "^3.6.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }

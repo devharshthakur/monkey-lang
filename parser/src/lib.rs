@@ -198,3 +198,134 @@ impl Parser {
         stmt
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::{LetStatement, Node};
+
+    /// Tests parsing of multiple let statements.
+    ///
+    /// This test verifies that the parser correctly:
+    /// 1. Parses multiple let statements from a single input string
+    /// 2. Creates the correct number of statements in the AST
+    /// 3. Each statement is correctly identified as a LetStatement
+    /// 4. Each statement's identifier name matches the expected value
+    ///
+    /// The test follows the same structure as the Go implementation from
+    /// "Writing an Interpreter in Go" by Thorsten Ball, ensuring compatibility
+    /// with the reference implementation.
+    ///
+    /// # Test Structure
+    /// - Creates a lexer and parser from input containing 3 let statements
+    /// - Parses the program and verifies statement count
+    /// - Iterates through each statement and validates its properties
+    #[test]
+    fn test_let_statements() {
+        // Input containing three let statements with different identifiers
+        let input = r#"
+let x = 5;
+let y = 10;
+let foobar = 838383;
+"#
+        .to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+
+        // Parse the program into an AST
+        let program = p.parse_program();
+
+        // Verify that parsing succeeded (program is not empty)
+        assert!(
+            !program.statements.is_empty(),
+            "ParseProgram() returned empty program"
+        );
+        // Verify that exactly 3 statements were parsed
+        assert_eq!(
+            program.statements.len(),
+            3,
+            "program.statements does not contain 3 statements. got={}",
+            program.statements.len()
+        );
+
+        // Expected identifier names for each statement (in order)
+        let tests = vec!["x", "y", "foobar"];
+
+        // Test each statement to ensure it's a LetStatement with the correct identifier
+        for (i, expected_identifier) in tests.iter().enumerate() {
+            let stmt = &program.statements[i];
+            assert!(
+                test_let_statement(stmt, expected_identifier),
+                "test_let_statement failed for statement {}",
+                i
+            );
+        }
+    }
+
+    /// Helper function to test a single let statement.
+    ///
+    /// This function validates that a statement is a `LetStatement` and that
+    /// its identifier matches the expected name. It uses downcasting to convert
+    /// from the trait object (`Box<dyn Statement>`) to the concrete type
+    /// (`LetStatement`) so we can access type-specific fields.
+    ///
+    /// # Why Downcasting?
+    /// Since `Program.statements` stores `Box<dyn Statement>` (trait objects),
+    /// we lose compile-time knowledge of the concrete type. Downcasting allows
+    /// us to recover the concrete type at runtime to access fields like `name.value`.
+    ///
+    /// # Alternative Approach
+    /// Consider using enums (`Statement::Let(LetStatement)`) instead of trait
+    /// objects for better compile-time safety and performance. See the AST
+    /// module documentation for more details.
+    ///
+    /// # Parameters
+    /// - `s`: A reference to a boxed Statement trait object to test
+    /// - `name`: The expected identifier name (e.g., "x", "y", "foobar")
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails (standard Rust test behavior)
+    ///
+    /// # Validations
+    /// 1. Verifies the statement's token literal is "let"
+    /// 2. Confirms the statement is actually a `LetStatement` (via downcast)
+    /// 3. Checks that the identifier's value matches the expected name
+    /// 4. Verifies the identifier's token literal matches the expected name
+    fn test_let_statement(s: &Box<dyn Statement>, name: &str) -> bool {
+        // Verify the statement's token literal is "let"
+        assert_eq!(
+            s.token_literal(),
+            "let",
+            "s.token_literal() not 'let'. got={}",
+            s.token_literal()
+        );
+
+        // Downcast from trait object to concrete LetStatement type
+        // This is necessary because we store statements as Box<dyn Statement>
+        // and need to access LetStatement-specific fields (like .name)
+        let let_stmt = s.as_any().downcast_ref::<LetStatement>().expect(&format!(
+            "s not *ast.LetStatement. got={:?}",
+            std::any::type_name::<dyn Statement>()
+        ));
+
+        // Verify the identifier's value matches the expected name
+        assert_eq!(
+            let_stmt.name.value, name,
+            "letStmt.name.value not '{}'. got={}",
+            name, let_stmt.name.value
+        );
+
+        // Verify the identifier's token literal also matches
+        assert_eq!(
+            let_stmt.name.token_literal(),
+            name,
+            "letStmt.name.token_literal() not '{}'. got={}",
+            name,
+            let_stmt.name.token_literal()
+        );
+
+        true
+    }
+}
