@@ -6,7 +6,7 @@
 //!
 //! Parsing approach:
 //! - Maintains a two-token lookahead (`curr_token`, `peek_token`).
-//! - Provides helpers like `expect_peek`, `curr_token_is`, and `peek_token_is`.
+//! - Provides helpers like `expect_peek`, `is_curr_token`, and `is_peek_token`.
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
@@ -46,7 +46,7 @@ impl Parser {
     ///
     /// Returns true if the current token's type matches the provided token type,
     /// false otherwise. Used for conditional parsing logic.
-    fn curr_token_is(&self, token_type: TokenType) -> bool {
+    fn is_curr_token(&self, token_type: TokenType) -> bool {
         self.curr_token.token_type == token_type
     }
 
@@ -54,7 +54,7 @@ impl Parser {
     ///
     /// Returns true if the peek token's type matches the provided token type,
     /// false otherwise. Used for lookahead parsing decisions.
-    fn peek_token_is(&self, token_type: TokenType) -> bool {
+    fn is_peek_token(&self, token_type: TokenType) -> bool {
         self.peek_token.token_type == token_type
     }
 
@@ -64,7 +64,7 @@ impl Parser {
     /// and returns true. If it doesn't match, adds an error to the parser's
     /// error list and returns false. This is used for enforcing syntax rules.
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
-        if self.peek_token_is(token_type) {
+        if self.is_peek_token(token_type) {
             self.next_token();
             true
         } else {
@@ -191,7 +191,7 @@ impl Parser {
         }
 
         // Skip until we encounter a semicolon
-        while !self.curr_token_is(TokenType::SEMICOLON) && !self.curr_token_is(TokenType::EOF) {
+        while !self.is_curr_token(TokenType::SEMICOLON) && !self.is_curr_token(TokenType::EOF) {
             self.next_token();
         }
 
@@ -235,6 +235,9 @@ let foobar = 838383;
 
         // Parse the program into an AST
         let program = p.parse_program();
+
+        // Check for any parser errors
+        check_parser_errors(&p);
 
         // Verify that parsing succeeded (program is not empty)
         assert!(
@@ -313,5 +316,16 @@ let foobar = 838383;
         );
 
         true
+    }
+    fn check_parser_errors(p: &Parser) {
+        let errors = p.errors();
+        if errors.is_empty() {
+            return;
+        }
+        println!("parser errors:");
+        for err in errors {
+            println!("{}", err);
+        }
+        panic!("parser has {:?} errors", errors.len());
     }
 }
