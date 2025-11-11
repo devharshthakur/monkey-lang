@@ -294,7 +294,7 @@ let foobar = 838383;
             s.token_literal()
         );
 
-        // Extract LetStatement from Statement enum using pattern matching
+        // Extract Let statement from Statement enum using pattern matching
         let let_stmt = match s {
             Statement::Let(stmt) => stmt,
         };
@@ -317,6 +317,21 @@ let foobar = 838383;
 
         true
     }
+    /// Checks for parser errors and prints them if any exist.
+    ///
+    /// This function verifies the parser's error list and prints any errors
+    /// that were collected during parsing. If no errors are found, it returns
+    /// early. If errors are present, it prints each error message and then
+    /// panics with a summary of the error count. This is used to ensure that
+    /// the parser correctly handles invalid input and reports any issues
+    /// encountered during the parsing process.
+    ///
+    /// # Parameters
+    /// - `p`: A reference to the Parser instance to check for errors
+    ///
+    /// # Returns
+    /// - `None` if no errors are found
+    /// - Panics with a summary of the error count if errors are present
     fn check_parser_errors(p: &Parser) {
         let errors = p.errors();
         if errors.is_empty() {
@@ -327,5 +342,23 @@ let foobar = 838383;
             println!("{}", err);
         }
         panic!("parser has {:?} errors", errors.len());
+    }
+    #[test]
+    fn test_return_statements() {
+        let input = r#"
+return 5;
+return 10;
+return 993322;
+"#
+        .to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        check_parser_errors(&p);
+        assert_eq!(program.statements.len(), 3);
+        assert_eq!(program.statements[0].token_literal(), "return");
+        assert_eq!(program.statements[1].token_literal(), "return");
+        assert_eq!(program.statements[2].token_literal(), "return");
     }
 }
