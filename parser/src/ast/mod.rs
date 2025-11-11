@@ -7,40 +7,16 @@
 //! trait objects and to render nodes for debugging and tests.
 //! Contributors should extend these definitions when adding new language forms.
 
-use lexer::token::Token;
+use crate::ast::statement::Statement;
+pub mod expression;
+pub mod statement;
 
 pub trait Node {
+    /// Returns the literal string representation of the token that
+    /// this node represents.
     fn token_literal(&self) -> &str;
 }
-
-/// Enum representing all statement types in the AST.
-#[derive(Debug, Clone)]
-pub enum Statement {
-    Let(LetStatement),
-}
-
-/// Enum representing all expression types in the AST.
-#[derive(Debug, Clone)]
-pub enum Expression {
-    Identifier(Identifier),
-}
-
-impl Node for Statement {
-    fn token_literal(&self) -> &str {
-        match self {
-            Statement::Let(stmt) => stmt.token_literal(),
-        }
-    }
-}
-
-impl Node for Expression {
-    fn token_literal(&self) -> &str {
-        match self {
-            Expression::Identifier(ident) => ident.token_literal(),
-        }
-    }
-}
-
+/// The root node of the AST, containing all top-level statements.
 pub struct Program {
     pub statements: Vec<Statement>,
 }
@@ -52,30 +28,5 @@ impl Node for Program {
         } else {
             ""
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Identifier {
-    pub token: Token,
-    pub value: String,
-}
-
-impl Node for Identifier {
-    fn token_literal(&self) -> &str {
-        &self.token.literal
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct LetStatement {
-    pub token: Token,
-    pub name: Identifier,
-    pub value: Option<Expression>,
-}
-
-impl Node for LetStatement {
-    fn token_literal(&self) -> &str {
-        &self.token.literal
     }
 }
