@@ -6,7 +6,7 @@
 //!
 //! Parsing approach:
 //! - Maintains a two-token lookahead (`curr_token`, `peek_token`).
-//! - Provides helpers like `expect_peek`, `curr_token_is`, and `peek_token_is`.
+//! - Provides helpers like `expect_peek`, `is_curr_token`, and `is_peek_token`.
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
@@ -46,7 +46,7 @@ impl Parser {
     ///
     /// Returns true if the current token's type matches the provided token type,
     /// false otherwise. Used for conditional parsing logic.
-    fn curr_token_is(&self, token_type: TokenType) -> bool {
+    fn is_curr_token(&self, token_type: TokenType) -> bool {
         self.curr_token.token_type == token_type
     }
 
@@ -54,7 +54,7 @@ impl Parser {
     ///
     /// Returns true if the peek token's type matches the provided token type,
     /// false otherwise. Used for lookahead parsing decisions.
-    fn peek_token_is(&self, token_type: TokenType) -> bool {
+    fn is_peek_token(&self, token_type: TokenType) -> bool {
         self.peek_token.token_type == token_type
     }
 
@@ -64,7 +64,7 @@ impl Parser {
     /// and returns true. If it doesn't match, adds an error to the parser's
     /// error list and returns false. This is used for enforcing syntax rules.
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
-        if self.peek_token_is(token_type) {
+        if self.is_peek_token(token_type) {
             self.next_token();
             true
         } else {
@@ -149,11 +149,11 @@ impl Parser {
     ///
     /// Uses the current token to determine what type of statement to parse.
     /// Currently supports LET statements. If an unsupported token type is
-    /// encountered, adds an error and returns None. Returns a boxed Statement
-    /// trait object for polymorphic statement handling.
-    fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
+    /// encountered, adds an error and returns None. Returns a Statement enum
+    /// variant for type-safe statement handling.
+    fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token.token_type {
-            TokenType::LET => Some(Box::new(self.parse_let_statement())),
+            TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             _ => {
                 self.display_no_parse_function_error(self.curr_token.token_type);
                 None
@@ -191,10 +191,174 @@ impl Parser {
         }
 
         // Skip until we encounter a semicolon
-        while !self.curr_token_is(TokenType::SEMICOLON) && !self.curr_token_is(TokenType::EOF) {
+        while !self.is_curr_token(TokenType::SEMICOLON) && !self.is_curr_token(TokenType::EOF) {
             self.next_token();
         }
 
         stmt
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::Node;
+
+    /// Tests parsing of multiple let statements.
+    ///
+    /// This test verifies that the parser correctly:
+    /// 1. Parses multiple let statements from a single input string
+    /// 2. Creates the correct number of statements in the AST
+    /// 3. Each statement is correctly identified as a LetStatement
+    /// 4. Each statement's identifier name matches the expected value
+    ///
+    /// The test follows the same structure as the Go implementation from
+    /// "Writing an Interpreter in Go" by Thorsten Ball, ensuring compatibility
+    /// with the reference implementation.
+    ///
+    /// # Test Structure
+    /// - Creates a lexer and parser from input containing 3 let statements
+    /// - Parses the program and verifies statement count
+    /// - Iterates through each statement and validates its properties
+    #[test]
+    fn test_let_statements() {
+        // Input containing three let statements with different identifiers
+        let input = r#"
+let x = 5;
+let y = 10;
+let foobar = 838383;
+"#
+        .to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+
+        // Parse the program into an AST
+        let program = p.parse_program();
+
+        // Check for any parser errors
+        check_parser_errors(&p);
+
+        // Verify that parsing succeeded (program is not empty)
+        assert!(
+            !program.statements.is_empty(),
+            "ParseProgram() returned empty program"
+        );
+        // Verify that exactly 3 statements were parsed
+        assert_eq!(
+            program.statements.len(),
+            3,
+            "program.statements does not contain 3 statements. got={}",
+            program.statements.len()
+        );
+
+        // Expected identifier names for each statement (in order)
+        let tests = vec!["x", "y", "foobar"];
+
+        // Test each statement to ensure it's a LetStatement with the correct identifier
+        for (i, expected_identifier) in tests.iter().enumerate() {
+            let stmt = &program.statements[i];
+            assert!(
+                test_let_statement(stmt, expected_identifier),
+                "test_let_statement failed for statement {}",
+                i
+            );
+        }
+    }
+
+    /// Helper function to test a single let statement.
+    ///
+    /// This function validates that a statement is a `LetStatement` and that
+    /// its identifier matches the expected name. It uses pattern matching to
+    /// extract the `LetStatement` from the `Statement` enum variant.
+    ///
+    /// # Parameters
+    /// - `s`: A reference to a Statement enum to test
+    /// - `name`: The expected identifier name (e.g., "x", "y", "foobar")
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails (standard Rust test behavior)
+    ///
+    /// # Validations
+    /// 1. Verifies the statement's token literal is "let"
+    /// 2. Confirms the statement is actually a `LetStatement` (via pattern matching)
+    /// 3. Checks that the identifier's value matches the expected name
+    /// 4. Verifies the identifier's token literal matches the expected name
+    fn test_let_statement(s: &Statement, name: &str) -> bool {
+        // Verify the statement's token literal is "let"
+        assert_eq!(
+            s.token_literal(),
+            "let",
+            "s.token_literal() not 'let'. got={}",
+            s.token_literal()
+        );
+
+        // Extract Let statement from Statement enum using pattern matching
+        let let_stmt = match s {
+            Statement::Let(stmt) => stmt,
+        };
+
+        // Verify the identifier's value matches the expected name
+        assert_eq!(
+            let_stmt.name.value, name,
+            "letStmt.name.value not '{}'. got={}",
+            name, let_stmt.name.value
+        );
+
+        // Verify the identifier's token literal also matches
+        assert_eq!(
+            let_stmt.name.token_literal(),
+            name,
+            "letStmt.name.token_literal() not '{}'. got={}",
+            name,
+            let_stmt.name.token_literal()
+        );
+
+        true
+    }
+    /// Checks for parser errors and prints them if any exist.
+    ///
+    /// This function verifies the parser's error list and prints any errors
+    /// that were collected during parsing. If no errors are found, it returns
+    /// early. If errors are present, it prints each error message and then
+    /// panics with a summary of the error count. This is used to ensure that
+    /// the parser correctly handles invalid input and reports any issues
+    /// encountered during the parsing process.
+    ///
+    /// # Parameters
+    /// - `p`: A reference to the Parser instance to check for errors
+    ///
+    /// # Returns
+    /// - `None` if no errors are found
+    /// - Panics with a summary of the error count if errors are present
+    fn check_parser_errors(p: &Parser) {
+        let errors = p.errors();
+        if errors.is_empty() {
+            return;
+        }
+        println!("parser errors:");
+        for err in errors {
+            println!("{}", err);
+        }
+        panic!("parser has {:?} errors", errors.len());
+    }
+    #[test]
+    fn test_return_statements() {
+        let input = r#"
+return 5;
+return 10;
+return 993322;
+"#
+        .to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        check_parser_errors(&p);
+        assert_eq!(program.statements.len(), 3);
+        assert_eq!(program.statements[0].token_literal(), "return");
+        assert_eq!(program.statements[1].token_literal(), "return");
+        assert_eq!(program.statements[2].token_literal(), "return");
     }
 }

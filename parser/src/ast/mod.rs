@@ -10,56 +10,72 @@
 use lexer::token::Token;
 
 pub trait Node {
-    fn token_literal(&self) -> String;
+    fn token_literal(&self) -> &str;
 }
 
-pub trait Statement: Node {
-    fn statement_node(&self);
+/// Enum representing all statement types in the AST.
+#[derive(Debug, Clone)]
+pub enum Statement {
+    Let(LetStatement),
 }
 
-pub trait Expression: Node {
-    fn expression_node(&self);
+/// Enum representing all expression types in the AST.
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Identifier(Identifier),
 }
 
-pub struct Program {
-    pub statements: Vec<Box<dyn Statement>>,
-}
-
-impl Node for Program {
-    fn token_literal(&self) -> String {
-        if !self.statements.is_empty() {
-            self.statements[0].token_literal()
-        } else {
-            "".to_string()
+impl Node for Statement {
+    fn token_literal(&self) -> &str {
+        match self {
+            Statement::Let(stmt) => stmt.token_literal(),
         }
     }
 }
+
+impl Node for Expression {
+    fn token_literal(&self) -> &str {
+        match self {
+            Expression::Identifier(ident) => ident.token_literal(),
+        }
+    }
+}
+
+pub struct Program {
+    pub statements: Vec<Statement>,
+}
+
+impl Node for Program {
+    fn token_literal(&self) -> &str {
+        if !self.statements.is_empty() {
+            self.statements[0].token_literal()
+        } else {
+            ""
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
 }
 
 impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &str {
+        &self.token.literal
     }
 }
 
-impl Expression for Identifier {
-    fn expression_node(&self) {}
-}
+#[derive(Debug, Clone)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    pub value: Option<Box<dyn Expression>>,
+    pub value: Option<Expression>,
 }
 
 impl Node for LetStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &str {
+        &self.token.literal
     }
-}
-
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
 }
