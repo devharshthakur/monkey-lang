@@ -10,9 +10,9 @@
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
-use crate::ast::Identifier;
-use crate::ast::LetStatement;
-use crate::ast::Statement;
+use crate::ast::expression::Identifier;
+use crate::ast::statement::LetStatement;
+use crate::ast::statement::Statement;
 use lexer::token::Token;
 use lexer::token::TokenType;
 use lexer::Lexer;
