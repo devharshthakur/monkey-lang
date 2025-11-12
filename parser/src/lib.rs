@@ -155,6 +155,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token.token_type {
             TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
+            TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
             _ => {
                 self.display_no_parse_function_error(self.curr_token.token_type);
                 None
@@ -178,6 +179,7 @@ impl Parser {
             },
             value: None,
         };
+
         if !self.expect_peek(TokenType::IDENT) {
             return stmt;
         }
@@ -205,18 +207,15 @@ impl Parser {
     /// it finds a semicolon. Currently doesn't parse the actual expression
     /// value (sets it to None). Returns a ReturnStatement with the token information.
     fn parse_return_statement(&mut self) -> ReturnStatement {
-        if !self.expect_peek(TokenType::RETURN) {
-            return ReturnStatement {
-                token: Token::new(TokenType::ILLEGAL, "".to_string()),
-                value: None,
-            };
-        }
-
-        let mut stmt = ReturnStatement {
+        let stmt = ReturnStatement {
             token: self.curr_token.clone(),
             value: None,
         };
-        self.next_token();
+
+        while !self.is_curr_token(TokenType::SEMICOLON) && !self.is_curr_token(TokenType::EOF) {
+            self.next_token();
+        }
+
         stmt
     }
 }
@@ -366,8 +365,25 @@ let foobar = 838383;
         }
         panic!("parser has {:?} errors", errors.len());
     }
+    /// Tests parsing of multiple return statements.
+    ///
+    /// This test verifies that the parser correctly:
+    /// 1. Parses multiple return statements from a single input string
+    /// 2. Creates the correct number of statements in the AST
+    /// 3. Each statement is correctly identified as a ReturnStatement
+    /// 4. Each statement's token literal matches "return"
+    ///
+    /// The test follows the same structure as the Go implementation from
+    /// "Writing an Interpreter in Go" by Thorsten Ball, ensuring compatibility
+    /// with the reference implementation.
+    ///
+    /// # Test Structure
+    /// - Creates a lexer and parser from input containing 3 return statements
+    /// - Parses the program and verifies statement count
+    /// - Iterates through each statement and validates its properties
     #[test]
     fn test_return_statements() {
+        // Input containing three return statements with different return values
         let input = r#"
 return 5;
 return 10;
@@ -377,11 +393,103 @@ return 993322;
 
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
+
+        // Parse the program into an AST
         let program = p.parse_program();
+
+        // Check for any parser errors
         check_parser_errors(&p);
-        assert_eq!(program.statements.len(), 3);
-        assert_eq!(program.statements[0].token_literal(), "return");
-        assert_eq!(program.statements[1].token_literal(), "return");
-        assert_eq!(program.statements[2].token_literal(), "return");
+
+        // Verify that parsing succeeded (program is not empty)
+        assert!(
+            !program.statements.is_empty(),
+            "ParseProgram() returned empty program"
+        );
+        // Verify that exactly 3 statements were parsed
+        assert_eq!(
+            program.statements.len(),
+            3,
+            "program.statements does not contain 3 statements. got={}",
+            program.statements.len()
+        );
+
+        // Test each statement to ensure it's a ReturnStatement
+        for (i, stmt) in program.statements.iter().enumerate() {
+            assert!(
+                is_return_statement(stmt),
+                "is_return_statement failed for statement {}",
+                i
+            );
+        }
+    }
+
+    /// Tests parsing a single return statement.
+    ///
+    /// This test verifies that a single return statement is correctly parsed
+    /// and identified as a ReturnStatement in the AST.
+    #[test]
+    fn test_return_statement() {
+        let input = "return 5;".to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+
+        check_parser_errors(&p);
+
+        assert_eq!(
+            program.statements.len(),
+            1,
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+
+        let stmt = &program.statements[0];
+        assert!(
+            is_return_statement(stmt),
+            "statement is not a ReturnStatement"
+        );
+    }
+
+    /// Helper function to test a single return statement.
+    ///
+    /// This function validates that a statement is a `ReturnStatement` and that
+    /// its token literal is "return". It uses pattern matching to extract the
+    /// `ReturnStatement` from the `Statement` enum variant.
+    ///
+    /// # Parameters
+    /// - `s`: A reference to a Statement enum to test
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails (standard Rust test behavior)
+    ///
+    /// # Validations
+    /// 1. Verifies the statement's token literal is "return"
+    /// 2. Confirms the statement is actually a `ReturnStatement` (via pattern matching)
+    fn is_return_statement(s: &Statement) -> bool {
+        // Verify the statement's token literal is "return"
+        assert_eq!(
+            s.token_literal(),
+            "return",
+            "token_literal() is not 'return'. got={}",
+            s.token_literal()
+        );
+
+        // Extract Return statement from Statement enum using pattern matching
+        let return_stmt = match s {
+            Statement::Return(stmt) => stmt,
+            _ => panic!("s is not a ReturnStatement. got={:?}", s),
+        };
+
+        // Verify the return statement's token literal matches
+        assert_eq!(
+            return_stmt.token_literal(),
+            "return",
+            "returnStmt.token_literal() not 'return'. got={}",
+            return_stmt.token_literal()
+        );
+
+        true
     }
 }
