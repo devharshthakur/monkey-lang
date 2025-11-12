@@ -11,7 +11,8 @@
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
 use crate::ast::expression::Identifier;
-use crate::ast::statement::LetStatement;
+use crate::ast::statement::let_stmt::LetStatement;
+use crate::ast::statement::return_stmt::ReturnStatement;
 use crate::ast::statement::Statement;
 use lexer::token::Token;
 use lexer::token::TokenType;
@@ -197,6 +198,27 @@ impl Parser {
 
         stmt
     }
+
+    /// Parses a return statement with the format: return <expression>;
+    ///
+    /// Expects the current token to be RETURN. Parses the expression value until
+    /// it finds a semicolon. Currently doesn't parse the actual expression
+    /// value (sets it to None). Returns a ReturnStatement with the token information.
+    fn parse_return_statement(&mut self) -> ReturnStatement {
+        if !self.expect_peek(TokenType::RETURN) {
+            return ReturnStatement {
+                token: Token::new(TokenType::ILLEGAL, "".to_string()),
+                value: None,
+            };
+        }
+
+        let mut stmt = ReturnStatement {
+            token: self.curr_token.clone(),
+            value: None,
+        };
+        self.next_token();
+        stmt
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +319,7 @@ let foobar = 838383;
         // Extract Let statement from Statement enum using pattern matching
         let let_stmt = match s {
             Statement::Let(stmt) => stmt,
+            _ => panic!("s is not a LetStatement"),
         };
 
         // Verify the identifier's value matches the expected name

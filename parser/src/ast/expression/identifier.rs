@@ -28,8 +28,8 @@ use lexer::token::Token;
 /// - `value`: The string name of the identifier, e.g., `"myVar"`.
 #[derive(Debug, Clone)]
 pub struct Identifier {
-    pub token: Token,  // The token corresponding to the identifier, e.g., Ident("myVar")
-    pub value: String, // The identifier's name as a string, e.g., "myVar"
+    pub token: Token,
+    pub value: String,
 }
 
 impl Node for Identifier {

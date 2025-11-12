@@ -4,22 +4,21 @@
 //! Each variant wraps a specific statement type.
 
 use super::Node;
-
-pub mod let_statement;
-
-// Re-export for convenience
-pub use let_statement::LetStatement;
+pub mod let_stmt;
+pub mod return_stmt;
 
 /// Enum representing all statement types in the AST.
 #[derive(Debug, Clone)]
 pub enum Statement {
-    Let(let_statement::LetStatement),
+    Let(let_stmt::LetStatement),
+    Return(return_stmt::ReturnStatement),
 }
 
 impl Node for Statement {
     fn token_literal(&self) -> &str {
         match self {
             Statement::Let(stmt) => stmt.token_literal(),
+            Statement::Return(stmt) => stmt.token_literal(),
         }
     }
 }
