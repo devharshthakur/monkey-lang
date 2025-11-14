@@ -2,9 +2,8 @@
 //!
 //! Represents a variable declaration: `let <identifier> = <expression>;`
 
-use crate::ast::expression::identifier::Identifier;
-use crate::ast::expression::Expression;
-use crate::ast::Node;
+use crate::expression::{Expression, Identifier};
+use crate::Node;
 use lexer::token::Token;
 
 /// Represents a `let` statement in the Monkey language AST.

@@ -7,7 +7,7 @@
 //! trait objects and to render nodes for debugging and tests.
 //! Contributors should extend these definitions when adding new language forms.
 
-use crate::ast::statement::Statement;
+use crate::statement::Statement;
 pub mod expression;
 pub mod statement;
 

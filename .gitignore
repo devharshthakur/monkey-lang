@@ -4,3 +4,6 @@ node_modules
 
 /target
 .DS_Store
+
+# VS Code workspace files
+monkey-lang.code-workspace

@@ -1,4 +1,4 @@
-use crate::ast::{expression::Expression, Node};
+use crate::{expression::Expression, Node};
 use lexer::token::Token;
 
 /// Represents a `return` statement in the Monkey language AST.

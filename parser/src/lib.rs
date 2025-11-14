@@ -10,15 +10,14 @@
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
-use crate::ast::expression::Identifier;
-use crate::ast::statement::let_stmt::LetStatement;
-use crate::ast::statement::return_stmt::ReturnStatement;
-use crate::ast::statement::Statement;
+use ast::expression::Identifier;
+use ast::statement::let_stmt::LetStatement;
+use ast::statement::return_stmt::ReturnStatement;
+use ast::statement::Statement;
+use ast::Program;
 use lexer::token::Token;
 use lexer::token::TokenType;
 use lexer::Lexer;
-
-pub mod ast;
 
 /// A parser that converts tokens from a lexer into an Abstract Syntax Tree (AST).
 ///
@@ -131,8 +130,8 @@ impl Parser {
     /// statement encountered. Collects all successfully parsed statements
     /// into a Program node. If parsing of a statement fails, it continues
     /// with the next statement rather than stopping the entire parse.
-    pub fn parse_program(&mut self) -> ast::Program {
-        let mut program = ast::Program {
+    pub fn parse_program(&mut self) -> Program {
+        let mut program = Program {
             statements: Vec::new(),
         };
         // Loop until EOF is reached
@@ -223,7 +222,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::Node;
+    use ast::Node;
 
     /// Tests parsing of multiple let statements.
     ///

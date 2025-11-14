@@ -6,10 +6,10 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 
 ## Project Goals
 
-- Faithfully implement the Monkey language as described in the book
-- Provide both an interpreter and a compiler
-- Leverage Rust's safety and performance features
-- Serve as a learning resource for Rust and language implementation
+- [x] Faithfully implement the Monkey language as described in the book
+- [x] Provide both an interpreter and a compiler
+- [x] Leverage Rust's safety and performance features
+- [x] Serve as a learning resource for Rust and language implementation
 
 ## Running & Development
 

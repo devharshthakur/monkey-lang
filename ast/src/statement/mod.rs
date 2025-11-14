@@ -3,7 +3,7 @@
 //! Statements represent actions or declarations in the program.
 //! Each variant wraps a specific statement type.
 
-use super::Node;
+use crate::Node;
 pub mod let_stmt;
 pub mod return_stmt;
 
