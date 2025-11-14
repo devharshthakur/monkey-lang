@@ -5,6 +5,7 @@
 use crate::expression::{Expression, Identifier};
 use crate::Node;
 use lexer::token::Token;
+use std::fmt::{Display, Formatter, Result};
 
 /// Represents a `let` statement in the Monkey language AST.
 ///
@@ -36,5 +37,27 @@ pub struct LetStatement {
 impl Node for LetStatement {
     fn token_literal(&self) -> &str {
         &self.token.literal
+    }
+}
+
+impl Display for LetStatement {
+    /// Formats the let statement as `let <name> = <value>;`.
+    ///
+    /// If the value is `None`, only the identifier is shown.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use ast::statement::let_stmt::LetStatement;
+    /// // For `let x = 5;` → outputs: "let x = 5;"
+    /// // For `let y;` (no value) → outputs: "let y ;"
+    /// ```
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{} ", self.token_literal())?;
+        write!(f, "{}", self.name)?;
+        write!(f, " = ")?;
+        if let Some(ref value) = self.value {
+            write!(f, "{}", value)?;
+        }
+        write!(f, ";")
     }
 }

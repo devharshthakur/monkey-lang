@@ -1,5 +1,6 @@
 use crate::Node;
 use lexer::token::Token;
+use std::fmt::{Display, Formatter, Result};
 
 /// Represents an identifier expression in the Monkey language AST.
 ///
@@ -20,5 +21,19 @@ pub struct Identifier {
 impl Node for Identifier {
     fn token_literal(&self) -> &str {
         &self.token.literal
+    }
+}
+
+impl Display for Identifier {
+    /// Formats the identifier as its string value.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use ast::expression::Identifier;
+    /// // For identifier `myVar` → outputs: "myVar"
+    /// // For identifier `x` → outputs: "x"
+    /// ```
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.value)
     }
 }

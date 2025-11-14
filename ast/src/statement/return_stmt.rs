@@ -1,5 +1,6 @@
 use crate::{expression::Expression, Node};
 use lexer::token::Token;
+use std::fmt::{Display, Formatter, Result};
 
 /// Represents a `return` statement in the Monkey language AST.
 ///
@@ -20,5 +21,25 @@ pub struct ReturnStatement {
 impl Node for ReturnStatement {
     fn token_literal(&self) -> &str {
         &self.token.literal
+    }
+}
+
+impl Display for ReturnStatement {
+    /// Formats the return statement as `return <value>;`.
+    ///
+    /// If the value is `None`, only the keyword and semicolon are shown.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use ast::statement::return_stmt::ReturnStatement;
+    /// // For `return 5;` → outputs: "return 5;"
+    /// // For `return;` (no value) → outputs: "return ;"
+    /// ```
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{} ", self.token_literal())?;
+        if let Some(ref value) = self.value {
+            write!(f, "{}", value)?;
+        }
+        write!(f, ";")
     }
 }
