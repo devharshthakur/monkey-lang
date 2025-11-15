@@ -4,13 +4,15 @@
   "description": "Monkey programming language interpreter and compiler",
   "scripts": {
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "author": "Harsh Thakur",
   "license": "MIT",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
   }
