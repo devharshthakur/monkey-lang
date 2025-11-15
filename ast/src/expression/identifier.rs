@@ -34,6 +34,7 @@ impl Display for Identifier {
     /// // For identifier `x` → outputs: "x"
     /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.value)
+        write!(f, "{}", &self.value)?;
+        Ok(())
     }
 }

@@ -55,9 +55,72 @@ impl Display for LetStatement {
         write!(f, "{} ", self.token_literal())?;
         write!(f, "{}", self.name)?;
         write!(f, " = ")?;
-        if let Some(ref value) = self.value {
+        if let Some(value) = &self.value {
             write!(f, "{}", value)?;
         }
         write!(f, ";")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::expression::Identifier;
+    use lexer::token::{Token, TokenType};
+
+    #[test]
+    fn test_let_statement_display_with_value() {
+        let token = Token::new(TokenType::LET, "let".to_string());
+        let name = Identifier {
+            token: Token::new(TokenType::IDENT, "x".to_string()),
+            value: "x".to_string(),
+        };
+        let value = Expression {
+            token: Token::new(TokenType::INT, "5".to_string()),
+            value: "5".to_string(),
+        };
+        let stmt = LetStatement {
+            token,
+            name,
+            value: Some(value),
+        };
+
+        assert_eq!(format!("{}", stmt), "let x = 5;");
+    }
+
+    #[test]
+    fn test_let_statement_display_without_value() {
+        let token = Token::new(TokenType::LET, "let".to_string());
+        let name = Identifier {
+            token: Token::new(TokenType::IDENT, "y".to_string()),
+            value: "y".to_string(),
+        };
+        let stmt = LetStatement {
+            token,
+            name,
+            value: None,
+        };
+
+        assert_eq!(format!("{}", stmt), "let y = ;");
+    }
+
+    #[test]
+    fn test_let_statement_display_with_identifier_value() {
+        let token = Token::new(TokenType::LET, "let".to_string());
+        let name = Identifier {
+            token: Token::new(TokenType::IDENT, "myVar".to_string()),
+            value: "myVar".to_string(),
+        };
+        let value = Expression {
+            token: Token::new(TokenType::IDENT, "anotherVar".to_string()),
+            value: "anotherVar".to_string(),
+        };
+        let stmt = LetStatement {
+            token,
+            name,
+            value: Some(value),
+        };
+
+        assert_eq!(format!("{}", stmt), "let myVar = anotherVar;");
     }
 }

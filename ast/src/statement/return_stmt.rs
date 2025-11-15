@@ -37,9 +37,52 @@ impl Display for ReturnStatement {
     /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{} ", self.token_literal())?;
-        if let Some(ref value) = self.value {
+        if let Some(value) = &self.value {
             write!(f, "{}", value)?;
         }
         write!(f, ";")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lexer::token::{Token, TokenType};
+
+    #[test]
+    fn test_return_statement_display_with_value() {
+        let token = Token::new(TokenType::RETURN, "return".to_string());
+        let value = Expression {
+            token: Token::new(TokenType::INT, "5".to_string()),
+            value: "5".to_string(),
+        };
+        let stmt = ReturnStatement {
+            token,
+            value: Some(value),
+        };
+
+        assert_eq!(format!("{}", stmt), "return 5;");
+    }
+
+    #[test]
+    fn test_return_statement_display_without_value() {
+        let token = Token::new(TokenType::RETURN, "return".to_string());
+        let stmt = ReturnStatement { token, value: None };
+        assert_eq!(format!("{}", stmt), "return ;");
+    }
+
+    #[test]
+    fn test_return_statement_display_with_expression() {
+        let token = Token::new(TokenType::RETURN, "return".to_string());
+        let value = Expression {
+            token: Token::new(TokenType::IDENT, "x".to_string()),
+            value: "x".to_string(),
+        };
+        let stmt = ReturnStatement {
+            token,
+            value: Some(value),
+        };
+
+        assert_eq!(format!("{}", stmt), "return x;");
     }
 }
