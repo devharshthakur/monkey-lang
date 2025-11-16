@@ -35,7 +35,7 @@ just format
 
 ## Progress Tracking
 
-Project progress is now tracked in [`checklist.md`](./checklist.md), which contains a detailed, chapter-by-chapter checklist based on the book. This file is regularly updated to reflect completed and in-progress tasks. If you are contributing or following along, please refer to `checklist.md` to see the current status and next steps.
+Project progress is now tracked in [`checklist.md`](./docs/checklist.md), which contains a detailed, chapter-by-chapter checklist based on the book. This file is regularly updated to reflect completed and in-progress tasks. If you are contributing or following along, please refer to `checklist.md` to see the current status and next steps.
 
 **How to use the checklist:**
 
