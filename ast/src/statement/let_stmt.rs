@@ -70,15 +70,17 @@ mod tests {
 
     #[test]
     fn test_let_statement_display_with_value() {
+        use crate::expression::literals::IntegerLiteral;
         let token = Token::new(TokenType::LET, "let".to_string());
         let name = Identifier {
             token: Token::new(TokenType::IDENT, "x".to_string()),
             value: "x".to_string(),
         };
-        let value = Expression {
+        let value_expr = IntegerLiteral {
             token: Token::new(TokenType::INT, "5".to_string()),
-            value: "5".to_string(),
+            value: 5,
         };
+        let value = Expression::IntegerLiteral(value_expr);
         let stmt = LetStatement {
             token,
             name,
@@ -111,10 +113,11 @@ mod tests {
             token: Token::new(TokenType::IDENT, "myVar".to_string()),
             value: "myVar".to_string(),
         };
-        let value = Expression {
+        let value_expr = Identifier {
             token: Token::new(TokenType::IDENT, "anotherVar".to_string()),
             value: "anotherVar".to_string(),
         };
+        let value = Expression::Identifier(value_expr);
         let stmt = LetStatement {
             token,
             name,

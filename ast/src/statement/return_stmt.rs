@@ -1,4 +1,5 @@
-use crate::{expression::Expression, Node};
+use crate::expression::Expression;
+use crate::Node;
 use lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 
@@ -47,15 +48,18 @@ impl Display for ReturnStatement {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::expression::Identifier;
     use lexer::token::{Token, TokenType};
 
     #[test]
     fn test_return_statement_display_with_value() {
+        use crate::expression::literals::IntegerLiteral;
         let token = Token::new(TokenType::RETURN, "return".to_string());
-        let value = Expression {
+        let value_expr = IntegerLiteral {
             token: Token::new(TokenType::INT, "5".to_string()),
-            value: "5".to_string(),
+            value: 5,
         };
+        let value = Expression::IntegerLiteral(value_expr);
         let stmt = ReturnStatement {
             token,
             value: Some(value),
@@ -74,10 +78,11 @@ mod tests {
     #[test]
     fn test_return_statement_display_with_expression() {
         let token = Token::new(TokenType::RETURN, "return".to_string());
-        let value = Expression {
+        let value_expr = Identifier {
             token: Token::new(TokenType::IDENT, "x".to_string()),
             value: "x".to_string(),
         };
+        let value = Expression::Identifier(value_expr);
         let stmt = ReturnStatement {
             token,
             value: Some(value),
