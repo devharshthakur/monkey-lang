@@ -50,7 +50,7 @@ Project progress is now tracked in [`checklist.md`](./docs/checklist.md), which 
 
 ## Status
 
-See [`checklist.md`](./checklist.md) for up-to-date progress and implementation status.
+See [`checklist.md`](./docs/checklist.md) for up-to-date progress and implementation status.
 
 Contributions and feedback are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
