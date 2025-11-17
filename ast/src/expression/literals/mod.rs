@@ -4,5 +4,5 @@
 //! strings, booleans, etc. Each literal type stores both the token (for
 //! position information) and the parsed value.
 
-pub mod integer_literal;
-pub use integer_literal::IntegerLiteral;
+pub mod integer;
+pub use integer::IntegerLiteral;
