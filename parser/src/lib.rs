@@ -14,8 +14,8 @@ use std::collections::HashMap;
 
 use ast::expression::Expression;
 use ast::expression::Identifier;
-use ast::statement::let_stmt::LetStatement;
-use ast::statement::return_stmt::ReturnStatement;
+use ast::statement::let_::LetStatement;
+use ast::statement::return_::ReturnStatement;
 use ast::statement::Statement;
 use ast::Program;
 use lexer::token::Token;
@@ -124,6 +124,14 @@ impl Parser {
         p.next_token();
         p.next_token();
         p
+    }
+
+    fn register_prefix_parse_fn(&mut self, token_type: TokenType, parse_fn: PrefixParseFn) {
+        self.prefix_parse_fns.insert(token_type, parse_fn);
+    }
+
+    fn register_infix_parse_fn(&mut self, token_type: TokenType, parse_fn: InfixParseFn) {
+        self.infix_parse_fns.insert(token_type, parse_fn);
     }
 
     /// Returns a reference to the parser's error list.

@@ -32,7 +32,7 @@ impl Display for ReturnStatement {
     ///
     /// # Example
     /// ```rust
-    /// # use ast::statement::return_stmt::ReturnStatement;
+    /// # use ast::statement::return_::ReturnStatement;
     /// // For `return 5;` → outputs: "return 5;"
     /// // For `return;` (no value) → outputs: "return ;"
     /// ```

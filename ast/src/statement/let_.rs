@@ -47,7 +47,7 @@ impl Display for LetStatement {
     ///
     /// # Example
     /// ```rust
-    /// # use ast::statement::let_stmt::LetStatement;
+    /// # use ast::statement::let_::LetStatement;
     /// // For `let x = 5;` → outputs: "let x = 5;"
     /// // For `let y;` (no value) → outputs: "let y ;"
     /// ```

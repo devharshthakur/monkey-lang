@@ -5,14 +5,16 @@
 
 use crate::Node;
 use std::fmt::{self, Display};
-pub mod let_stmt;
-pub mod return_stmt;
+pub mod expr;
+pub mod let_;
+pub mod return_;
 
 /// Enum representing all statement types in the AST.
 #[derive(Debug, Clone)]
 pub enum Statement {
-    Let(let_stmt::LetStatement),
-    Return(return_stmt::ReturnStatement),
+    Let(let_::LetStatement),
+    Return(return_::ReturnStatement),
+    Expression(expr::ExpressionStatement),
 }
 
 impl Node for Statement {
@@ -20,6 +22,7 @@ impl Node for Statement {
         match self {
             Statement::Let(stmt) => stmt.token_literal(),
             Statement::Return(stmt) => stmt.token_literal(),
+            Statement::Expression(stmt) => stmt.token_literal(),
         }
     }
 }
@@ -37,6 +40,7 @@ impl Display for Statement {
         match self {
             Statement::Let(stmt) => write!(f, "{}", stmt),
             Statement::Return(stmt) => write!(f, "{}", stmt),
+            Statement::Expression(stmt) => write!(f, "{}", stmt),
         }
     }
 }

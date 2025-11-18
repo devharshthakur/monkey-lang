@@ -38,3 +38,24 @@ impl Display for Identifier {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lexer::token::{Token, TokenType};
+
+    #[test]
+    fn test_identifier_display() {
+        let ident = Identifier {
+            token: Token {
+                token_type: TokenType::IDENT,
+                literal: "foobar".to_string(),
+            },
+            value: "foobar".to_string(),
+        };
+
+        assert_eq!(ident.value, "foobar");
+        assert_eq!(ident.token_literal(), "foobar");
+        assert_eq!(format!("{}", ident), "foobar");
+    }
+}
