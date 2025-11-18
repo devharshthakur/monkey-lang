@@ -10,6 +10,9 @@
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
+use std::collections::HashMap;
+
+use ast::expression::Expression;
 use ast::expression::Identifier;
 use ast::statement::let_stmt::LetStatement;
 use ast::statement::return_stmt::ReturnStatement;
@@ -29,7 +32,12 @@ pub struct Parser {
     curr_token: Token,
     peek_token: Token,
     pub errors: Vec<String>,
+    prefix_parse_fns: HashMap<TokenType, PrefixParseFn>,
+    infix_parse_fns: HashMap<TokenType, InfixParseFn>,
 }
+
+type PrefixParseFn = fn(&mut Parser) -> Option<Expression>;
+type InfixParseFn = fn(&mut Parser, Expression) -> Option<Expression>;
 
 impl Parser {
     /// Advances the token buffer by one position.
@@ -110,6 +118,8 @@ impl Parser {
             curr_token: Token::new(TokenType::EOF, "".to_string()),
             peek_token: Token::new(TokenType::EOF, "".to_string()),
             errors: Vec::new(),
+            prefix_parse_fns: HashMap::new(),
+            infix_parse_fns: HashMap::new(),
         };
         p.next_token();
         p.next_token();
