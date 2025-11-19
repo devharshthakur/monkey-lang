@@ -15,6 +15,7 @@ mod precedence;
 use crate::precedence::Precedence;
 use ast::expression::Expression;
 use ast::expression::Identifier;
+use ast::literals::integer::IntegerLiteral;
 use ast::statement::expr::ExpressionStatement;
 use ast::statement::let_::LetStatement;
 use ast::statement::return_::ReturnStatement;
@@ -43,6 +44,26 @@ type PrefixParseFn = fn(&mut Parser) -> Option<Expression>;
 type InfixParseFn = fn(&mut Parser, Expression) -> Option<Expression>;
 
 impl Parser {
+    /// Creates a new parser instance with the given lexer.
+    ///
+    /// Initializes the parser with empty tokens and then reads the first two tokens
+    /// to set up the lookahead buffer. This ensures the parser always has
+    /// both current and peek tokens available for parsing decisions.
+    pub fn new(l: Lexer) -> Self {
+        let mut p = Parser {
+            l,
+            curr_token: Token::new(TokenType::EOF, "".to_string()),
+            peek_token: Token::new(TokenType::EOF, "".to_string()),
+            errors: Vec::new(),
+            prefix_parse_fns: HashMap::new(),
+            infix_parse_fns: HashMap::new(),
+        };
+        p.register_prefix_parse_fn(TokenType::IDENT, Parser::parse_identifier);
+        p.register_prefix_parse_fn(TokenType::INT, Parser::parse_integer_literal);
+        p.next_token();
+        p.next_token();
+        p
+    }
     /// Advances the token buffer by one position.
     ///
     /// Moves the peek token to the current token position and reads
@@ -108,26 +129,6 @@ impl Parser {
             token_type, self.curr_token.literal
         );
         self.errors.push(msg);
-    }
-
-    /// Creates a new parser instance with the given lexer.
-    ///
-    /// Initializes the parser with empty tokens and then reads the first two tokens
-    /// to set up the lookahead buffer. This ensures the parser always has
-    /// both current and peek tokens available for parsing decisions.
-    pub fn new(l: Lexer) -> Self {
-        let mut p = Parser {
-            l,
-            curr_token: Token::new(TokenType::EOF, "".to_string()),
-            peek_token: Token::new(TokenType::EOF, "".to_string()),
-            errors: Vec::new(),
-            prefix_parse_fns: HashMap::new(),
-            infix_parse_fns: HashMap::new(),
-        };
-        p.register_prefix_parse_fn(TokenType::IDENT, Parser::parse_identifier);
-        p.next_token();
-        p.next_token();
-        p
     }
 
     fn register_prefix_parse_fn(&mut self, token_type: TokenType, parse_fn: PrefixParseFn) {
@@ -284,6 +285,12 @@ impl Parser {
             self.display_no_parse_function_error(self.curr_token.token_type);
             return None;
         }
+    }
+
+    fn parse_integer_literal(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let value = self.curr_token.literal.parse::<i64>().unwrap();
+        Some(Expression::IntegerLiteral(IntegerLiteral { token, value }))
     }
 }
 
@@ -605,6 +612,51 @@ return 993322;
             "foobar",
             "ident.token_literal() is not foobar. got={}",
             ident.token_literal()
+        );
+    }
+
+    /// Tests parsing of a single integer literal expression.
+    ///
+    /// This test verifies that a single integer literal expression is correctly parsed
+    /// and identified as an IntegerLiteralExpression in the AST.
+    #[test]
+
+    fn test_integer_literal_expression() {
+        let input = "5;".to_string();
+        // Creates a lexer and parser from input
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+        // Parses the program and verifies statement count
+        let program = p.parse_program();
+        // Checks for any parser errors
+        check_parser_errors(&p);
+        // Verifies that the program has exactly 1 statement
+        assert_eq!(program.statements.len(), 1);
+        // Iterates through each statement and validates its properties
+        let stmt = &program.statements[0];
+        // Verifies that the statement is an ExpressionStatement
+        let expr_stmt = match stmt {
+            Statement::Expression(expr_stmt) => expr_stmt,
+            _ => panic!("s is not an ExpressionStatement. got={:?}", stmt),
+        };
+        let expr = &expr_stmt.value;
+        // Verifies that the expression is an IntegerLiteral
+        let int_lit = match expr {
+            Expression::IntegerLiteral(int_lit) => int_lit,
+            _ => panic!("expr is not an IntegerLiteral. got={:?}", expr),
+        };
+        // Verifies that the integer literal's value matches the expected value
+        assert_eq!(
+            int_lit.value, 5,
+            "int_lit.value is not 5. got={}",
+            int_lit.value
+        );
+        // Verifies that the integer literal's token literal matches the expected value
+        assert_eq!(
+            int_lit.token_literal(),
+            "5",
+            "int_lit.token_literal() is not 5. got={}",
+            int_lit.token_literal()
         );
     }
 }

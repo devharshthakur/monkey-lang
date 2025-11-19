@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_let_statement_display_with_value() {
-        use crate::expression::literals::IntegerLiteral;
+        use crate::literals::integer::IntegerLiteral;
         let token = Token::new(TokenType::LET, "let".to_string());
         let name = Identifier {
             token: Token::new(TokenType::IDENT, "x".to_string()),

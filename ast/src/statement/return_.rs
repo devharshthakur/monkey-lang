@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_return_statement_display_with_value() {
-        use crate::expression::literals::IntegerLiteral;
+        use crate::literals::integer::IntegerLiteral;
         let token = Token::new(TokenType::RETURN, "return".to_string());
         let value_expr = IntegerLiteral {
             token: Token::new(TokenType::INT, "5".to_string()),

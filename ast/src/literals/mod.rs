@@ -5,4 +5,3 @@
 //! position information) and the parsed value.
 
 pub mod integer;
-pub use integer::IntegerLiteral;

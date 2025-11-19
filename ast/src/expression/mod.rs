@@ -3,14 +3,11 @@
 //! Expressions represent values and computations that evaluate to a value.
 //! Each variant wraps a specific expression type.
 
-use crate::Node;
+use crate::{literals::integer::IntegerLiteral, Node};
 use std::fmt::{Display, Formatter, Result};
 
 pub mod identifier;
 pub use identifier::Identifier;
-
-pub mod literals;
-pub use literals::IntegerLiteral;
 
 /// Enum representing all expression types in the AST.
 ///
