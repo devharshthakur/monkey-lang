@@ -12,8 +12,10 @@
 
 mod precedence;
 
+use crate::precedence::Precedence;
 use ast::expression::Expression;
 use ast::expression::Identifier;
+use ast::statement::expr::ExpressionStatement;
 use ast::statement::let_::LetStatement;
 use ast::statement::return_::ReturnStatement;
 use ast::statement::Statement;
@@ -122,6 +124,7 @@ impl Parser {
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
+        p.register_prefix_parse_fn(TokenType::IDENT, Parser::parse_identifier);
         p.next_token();
         p.next_token();
         p
@@ -174,7 +177,7 @@ impl Parser {
         match self.curr_token.token_type {
             TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
-            _ => None,
+            _ => Some(Statement::Expression(self.parse_expression_statement())),
         }
     }
 
@@ -197,7 +200,7 @@ impl Parser {
                 value: None,
             };
         }
-
+        // Parse the identifier
         let name = Identifier {
             token: self.curr_token.clone(),
             value: self.curr_token.literal.clone(),
@@ -249,12 +252,72 @@ impl Parser {
 
         ReturnStatement { token, value: None }
     }
+
+    /// Parses an identifier expression.
+    /// Expects the current token to be an identifier. Returns an Identifier expression.
+    fn parse_identifier(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let value = self.curr_token.literal.clone();
+        Some(Expression::Identifier(Identifier { token, value }))
+    }
+
+    fn parse_expression_statement(&mut self) -> ExpressionStatement {
+        let stmt = ExpressionStatement {
+            token: self.curr_token.clone(),
+            value: self.parse_expression(Precedence::LOWEST).unwrap(),
+        };
+
+        // Optional semicolon for REPL
+        if self.is_peek_token(TokenType::SEMICOLON) {
+            self.next_token();
+        }
+        stmt
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
+        let prefix = self.prefix_parse_fns.get(&self.curr_token.token_type);
+
+        if let Some(parse_fn) = prefix {
+            let left_exp = parse_fn(self).unwrap();
+            return Some(left_exp);
+        } else {
+            self.display_no_parse_function_error(self.curr_token.token_type);
+            return None;
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use ast::Node;
+
+    /// Checks for parser errors and prints them if any exist.
+    ///
+    /// This function verifies the parser's error list and prints any errors
+    /// that were collected during parsing. If no errors are found, it returns
+    /// early. If errors are present, it prints each error message and then
+    /// panics with a summary of the error count. This is used to ensure that
+    /// the parser correctly handles invalid input and reports any issues
+    /// encountered during the parsing process.
+    ///
+    /// # Parameters
+    /// - `p`: A reference to the Parser instance to check for errors
+    ///
+    /// # Returns
+    /// - `None` if no errors are found
+    /// - Panics with a summary of the error count if errors are present
+    fn check_parser_errors(p: &Parser) {
+        let errors = p.errors();
+        if errors.is_empty() {
+            return;
+        }
+        println!("parser errors:");
+        for err in errors {
+            println!("{}", err);
+        }
+        panic!("parser has {:?} errors", errors.len());
+    }
 
     /// Tests parsing of multiple let statements.
     ///
@@ -369,32 +432,6 @@ let foobar = 838383;
         );
 
         true
-    }
-    /// Checks for parser errors and prints them if any exist.
-    ///
-    /// This function verifies the parser's error list and prints any errors
-    /// that were collected during parsing. If no errors are found, it returns
-    /// early. If errors are present, it prints each error message and then
-    /// panics with a summary of the error count. This is used to ensure that
-    /// the parser correctly handles invalid input and reports any issues
-    /// encountered during the parsing process.
-    ///
-    /// # Parameters
-    /// - `p`: A reference to the Parser instance to check for errors
-    ///
-    /// # Returns
-    /// - `None` if no errors are found
-    /// - Panics with a summary of the error count if errors are present
-    fn check_parser_errors(p: &Parser) {
-        let errors = p.errors();
-        if errors.is_empty() {
-            return;
-        }
-        println!("parser errors:");
-        for err in errors {
-            println!("{}", err);
-        }
-        panic!("parser has {:?} errors", errors.len());
     }
     /// Tests parsing of multiple return statements.
     ///
