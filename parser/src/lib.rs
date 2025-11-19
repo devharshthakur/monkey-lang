@@ -10,7 +10,7 @@
 //! - Reports user-friendly errors via the `errors` vector.
 //! - Currently supports parsing `let` statements and collects them in `Program`.
 
-use std::collections::HashMap;
+mod precedence;
 
 use ast::expression::Expression;
 use ast::expression::Identifier;
@@ -21,6 +21,7 @@ use ast::Program;
 use lexer::token::Token;
 use lexer::token::TokenType;
 use lexer::Lexer;
+use std::collections::HashMap;
 
 /// A parser that converts tokens from a lexer into an Abstract Syntax Tree (AST).
 ///
@@ -166,56 +167,66 @@ impl Parser {
     /// Parses a single statement based on the current token type.
     ///
     /// Uses the current token to determine what type of statement to parse.
-    /// Currently supports LET statements. If an unsupported token type is
+    /// Currently supports LET and RETURN statements. If an unsupported token type is
     /// encountered, adds an error and returns None. Returns a Statement enum
     /// variant for type-safe statement handling.
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token.token_type {
             TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
-            _ => {
-                self.display_no_parse_function_error(self.curr_token.token_type);
-                None
-            }
+            _ => None,
         }
     }
 
     /// Parses a let statement with the format: let <identifier> = <expression>;
     ///
-    /// Expects the current token to be LET. Parses the identifier name,
-    /// expects an equals sign, then skips over the expression value until
-    /// it finds a semicolon. Currently doesn't parse the actual expression
-    /// value (sets it to None). Returns a LetStatement with the parsed
-    /// identifier and token information.
+    /// Expects the current token to be LET. Parses the identifier name and
+    /// expects an equals sign. Currently doesn't parse the actual expression
+    /// value (sets it to None). Returns a LetStatement with the token information.
     fn parse_let_statement(&mut self) -> LetStatement {
-        let mut stmt = LetStatement {
-            token: self.curr_token.clone(),
-            name: Identifier {
-                token: Token::new(TokenType::ILLEGAL, "".to_string()),
-                value: "".to_string(),
-            },
-            value: None,
-        };
+        let token = self.curr_token.clone();
 
+        // Expect identifier after 'let'
         if !self.expect_peek(TokenType::IDENT) {
-            return stmt;
+            return LetStatement {
+                token,
+                name: Identifier {
+                    token: Token::new(TokenType::ILLEGAL, "".to_string()),
+                    value: "".to_string(),
+                },
+                value: None,
+            };
         }
 
-        stmt.name = Identifier {
+        let name = Identifier {
             token: self.curr_token.clone(),
             value: self.curr_token.literal.clone(),
         };
 
+        // Expect '=' after identifier
         if !self.expect_peek(TokenType::ASSIGN) {
-            return stmt;
+            return LetStatement {
+                token,
+                name,
+                value: None,
+            };
         }
 
-        // Skip until we encounter a semicolon
-        while !self.is_curr_token(TokenType::SEMICOLON) && !self.is_curr_token(TokenType::EOF) {
+        // Skip expression for now - just advance until semicolon
+        while !self.is_peek_token(TokenType::SEMICOLON) && !self.is_peek_token(TokenType::EOF) {
             self.next_token();
         }
 
-        stmt
+        // Expect semicolon
+        if self.is_peek_token(TokenType::SEMICOLON) {
+            self.next_token();
+        }
+
+        LetStatement {
+            token,
+            name,
+            value: None,
+        }
     }
 
     /// Parses a return statement with the format: return <expression>;
@@ -224,16 +235,19 @@ impl Parser {
     /// it finds a semicolon. Currently doesn't parse the actual expression
     /// value (sets it to None). Returns a ReturnStatement with the token information.
     fn parse_return_statement(&mut self) -> ReturnStatement {
-        let stmt = ReturnStatement {
-            token: self.curr_token.clone(),
-            value: None,
-        };
+        let token = self.curr_token.clone();
 
-        while !self.is_curr_token(TokenType::SEMICOLON) && !self.is_curr_token(TokenType::EOF) {
+        // Skip expression for now - just advance until semicolon
+        while !self.is_peek_token(TokenType::SEMICOLON) && !self.is_peek_token(TokenType::EOF) {
             self.next_token();
         }
 
-        stmt
+        // Expect semicolon
+        if self.is_peek_token(TokenType::SEMICOLON) {
+            self.next_token();
+        }
+
+        ReturnStatement { token, value: None }
     }
 }
 
@@ -508,5 +522,52 @@ return 993322;
         );
 
         true
+    }
+
+    /// Tests parsing of a single identifier expression.
+    ///
+    /// This test verifies that a single identifier expression is correctly parsed
+    /// and identified as an IdentifierExpression in the AST.
+    #[test]
+    fn test_identifier_expression() {
+        // Creates a lexer and parser from input containing a single identifier expression
+        let input = "foobar;".to_string();
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+
+        // Parses the program and verifies statement count
+        let program = p.parse_program();
+        check_parser_errors(&p);
+        assert_eq!(program.statements.len(), 1);
+
+        // Iterates through each statement and validates its properties
+        let stmt = &program.statements[0];
+
+        // Verifies that the statement is an ExpressionStatement
+        let expr_stmt = match stmt {
+            Statement::Expression(expr_stmt) => expr_stmt,
+            _ => panic!("s is not an ExpressionStatement. got={:?}", stmt),
+        };
+
+        // Verifies that the expression is an Identifier
+        let expr = &expr_stmt.value;
+        let ident = match expr {
+            Expression::Identifier(ident) => ident,
+            _ => panic!("expr is not an Identifier. got={:?}", expr),
+        };
+
+        // Verifies that the identifier's value matches the expected value
+        assert_eq!(
+            ident.value, "foobar",
+            "ident.value is not foobar. got={}",
+            ident.value
+        );
+        // Verifies that the identifier's token literal matches the expected value
+        assert_eq!(
+            ident.token_literal(),
+            "foobar",
+            "ident.token_literal() is not foobar. got={}",
+            ident.token_literal()
+        );
     }
 }
