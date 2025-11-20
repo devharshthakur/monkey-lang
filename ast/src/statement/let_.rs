@@ -2,8 +2,10 @@
 //!
 //! Represents a variable declaration: `let <identifier> = <expression>;`
 
-use crate::expression::{Expression, Identifier};
-use crate::Node;
+use crate::{
+    expression::{Expression, Identifier},
+    Node,
+};
 use lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 

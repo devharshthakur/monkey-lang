@@ -1,8 +1,5 @@
-use lexer::token::TokenType;
-use lexer::Lexer;
-use std::io::BufRead;
-use std::io::Write;
-use std::io::{self};
+use lexer::{token::TokenType, Lexer};
+use std::io::{self, BufRead, Write};
 
 const PROMPT: &str = ">>";
 

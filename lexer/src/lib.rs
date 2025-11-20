@@ -1,4 +1,5 @@
 use crate::token::{lookup_identifier, Token, TokenType};
+
 pub mod token;
 
 pub struct Lexer {

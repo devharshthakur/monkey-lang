@@ -2,8 +2,7 @@
 //!
 //! Represents a standalone expression as a statement: `<expression>;`
 
-use crate::expression::Expression;
-use crate::Node;
+use crate::{expression::Expression, Node};
 use lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 

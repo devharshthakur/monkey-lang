@@ -9,6 +9,9 @@ use std::fmt::{Display, Formatter, Result};
 pub mod identifier;
 pub use identifier::Identifier;
 
+pub mod prefix;
+pub use prefix::PrefixExpression;
+
 /// Enum representing all expression types in the AST.
 ///
 /// This enum provides type-safe representation of all possible expressions
@@ -20,7 +23,7 @@ pub use identifier::Identifier;
 /// # use ast::expression::{Expression, Identifier};
 /// # use lexer::token::{Token, TokenType};
 /// // Create an identifier expression
-/// let ident = Identifier {
+/// let ident = Identifier
 ///     token: Token::new(TokenType::IDENT, "x".to_string()),
 ///     value: "x".to_string(),
 /// };
@@ -32,6 +35,8 @@ pub enum Expression {
     Identifier(Identifier),
     /// An integer literal expression (e.g., `42`, `-10`)
     IntegerLiteral(IntegerLiteral),
+    /// A prefix expression (e.g., `!true`, `-5`)
+    PrefixExpression(PrefixExpression),
 }
 
 impl Node for Expression {
@@ -39,6 +44,7 @@ impl Node for Expression {
         match self {
             Expression::Identifier(ident) => ident.token_literal(),
             Expression::IntegerLiteral(il) => il.token_literal(),
+            Expression::PrefixExpression(pe) => pe.token_literal(),
         }
     }
 }
@@ -63,6 +69,7 @@ impl Display for Expression {
         match self {
             Expression::Identifier(ident) => write!(f, "{}", ident),
             Expression::IntegerLiteral(il) => write!(f, "{}", il),
+            Expression::PrefixExpression(pe) => write!(f, "{}", pe),
         }
     }
 }

@@ -12,17 +12,18 @@
 mod precedence;
 
 use crate::precedence::Precedence;
-use ast::expression::Expression;
-use ast::expression::Identifier;
-use ast::literals::integer::IntegerLiteral;
-use ast::statement::expr::ExpressionStatement;
-use ast::statement::let_::LetStatement;
-use ast::statement::return_::ReturnStatement;
-use ast::statement::Statement;
-use ast::Program;
-use lexer::token::Token;
-use lexer::token::TokenType;
-use lexer::Lexer;
+use ast::{
+    expression::{Expression, Identifier, PrefixExpression},
+    literals::integer::IntegerLiteral,
+    statement::{
+        expr::ExpressionStatement, let_::LetStatement, return_::ReturnStatement, Statement,
+    },
+    Program,
+};
+use lexer::{
+    token::{Token, TokenType},
+    Lexer,
+};
 use std::collections::HashMap;
 
 /// A parser that converts tokens from a lexer into an Abstract Syntax Tree (AST).
@@ -261,6 +262,19 @@ impl Parser {
         Some(Expression::Identifier(Identifier { token, value }))
     }
 
+    /// Parses an expression statement, which is an expression followed by an optional semicolon.
+    ///
+    /// An expression statement wraps an expression in a statement context, allowing
+    /// expressions to be used as standalone statements. This is commonly used in REPL
+    /// environments where users can type expressions directly without needing to wrap
+    /// them in a let or return statement.
+    ///
+    /// The function parses the expression using the lowest precedence level and then
+    /// optionally consumes a semicolon if present. The semicolon is optional to support
+    /// REPL usage where semicolons may be omitted.
+    ///
+    /// # Returns
+    /// An `ExpressionStatement` containing the parsed expression and its token information.
     fn parse_expression_statement(&mut self) -> ExpressionStatement {
         let stmt = ExpressionStatement {
             token: self.curr_token.clone(),
@@ -274,6 +288,23 @@ impl Parser {
         stmt
     }
 
+    /// Parses an expression starting from the current token position.
+    ///
+    /// This is the main entry point for expression parsing. It uses the Pratt parsing
+    /// algorithm approach, where expressions are parsed based on precedence levels.
+    /// The function looks up a prefix parse function for the current token type and
+    /// delegates to that function to parse the expression.
+    ///
+    /// # Parameters
+    /// - `precedence`: The minimum precedence level required to continue parsing.
+    ///
+    /// # Returns
+    /// - `Some(Expression)` if parsing succeeds
+    /// - `None` if no parse function is registered for the current token type
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if no parse function is found for
+    /// the current token type.
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
         let prefix = self.prefix_parse_fns.get(&self.curr_token.token_type);
 
@@ -286,10 +317,47 @@ impl Parser {
         }
     }
 
+    /// Parses an integer literal expression from the current token.
+    ///
+    /// Expects the current token to be of type `INT`. Extracts the integer value
+    /// from the token's literal string by parsing it as a 64-bit signed integer.
+    /// Returns an `IntegerLiteral` expression node containing both the original token
+    /// information and the parsed integer value.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing an `IntegerLiteral` variant if parsing succeeds.
+    /// The function assumes the token literal is a valid integer string (parsing will
+    /// panic if it's not, which should be caught during lexing).
     fn parse_integer_literal(&mut self) -> Option<Expression> {
         let token = self.curr_token.clone();
         let value = self.curr_token.literal.parse::<i64>().unwrap();
         Some(Expression::IntegerLiteral(IntegerLiteral { token, value }))
+    }
+
+    /// Parses a prefix expression (e.g., `!true`, `-5`).
+    ///
+    /// Expects the current token to be a prefix operator (BANG or MINUS).
+    /// Extracts the operator, advances to the next token, and parses the
+    /// right-hand expression with PREFIX precedence. Returns a PrefixExpression
+    /// wrapped in an Expression variant.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing a `PrefixExpression` variant if parsing succeeds.
+    fn parse_prefix_expression(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let operator = self.curr_token.literal.clone();
+
+        // Advance to the next token (the right-hand expression)
+        self.next_token();
+
+        // Parse the right-hand expression with PREFIX precedence
+        let right = self.parse_expression(Precedence::PREFIX)?;
+
+        Some(Expression::PrefixExpression(PrefixExpression {
+            token,
+            operator,
+            right: Box::new(right),
+        }))
     }
 }
 
