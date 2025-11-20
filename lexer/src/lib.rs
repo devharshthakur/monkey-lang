@@ -175,6 +175,7 @@ impl Lexer {
             '}' => Token::new(TokenType::RBRACE, self.curr_char.to_string()),
             '\0' => Token::new(TokenType::EOF, "".to_string()),
             _ => {
+                // Handling identifiers and numbers
                 if self.is_letter() {
                     let literal = self.read_identifier();
                     let token_type = lookup_identifier(&literal);

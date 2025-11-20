@@ -61,6 +61,16 @@ impl Token {
     }
 }
 
+/// Looks up the token type for a given identifier string.
+///
+/// This function checks if the identifier matches any of the predefined keywords
+/// and returns the corresponding TokenType. If the identifier is not a keyword,
+/// it returns TokenType::IDENT.
+///
+/// ## Arguments
+/// * `ident` - The identifier string to look up
+/// ## Returns
+/// The TokenType corresponding to the identifier, or TokenType::IDENT if not found.
 pub fn lookup_identifier(ident: &str) -> TokenType {
     match ident {
         "fn" => TokenType::FUNCTION,

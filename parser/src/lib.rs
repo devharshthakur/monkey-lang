@@ -8,7 +8,6 @@
 //! - Maintains a two-token lookahead (`curr_token`, `peek_token`).
 //! - Provides helpers like `expect_peek`, `is_curr_token`, and `is_peek_token`.
 //! - Reports user-friendly errors via the `errors` vector.
-//! - Currently supports parsing `let` statements and collects them in `Program`.
 
 mod precedence;
 
@@ -374,10 +373,8 @@ let foobar = 838383;
             program.statements.len()
         );
 
-        // Expected identifier names for each statement (in order)
-        let tests = vec!["x", "y", "foobar"];
-
         // Test each statement to ensure it's a LetStatement with the correct identifier
+        let tests = vec!["x", "y", "foobar"];
         for (i, expected_identifier) in tests.iter().enumerate() {
             let stmt = &program.statements[i];
             assert!(
@@ -626,7 +623,6 @@ return 993322;
         // Creates a lexer and parser from input
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
-        // Parses the program and verifies statement count
         let program = p.parse_program();
         // Checks for any parser errors
         check_parser_errors(&p);
