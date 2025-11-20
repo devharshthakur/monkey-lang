@@ -60,6 +60,8 @@ impl Parser {
         };
         p.register_prefix_parse_fn(TokenType::IDENT, Parser::parse_identifier);
         p.register_prefix_parse_fn(TokenType::INT, Parser::parse_integer_literal);
+        p.register_prefix_parse_fn(TokenType::BANG, Parser::parse_prefix_expression);
+        p.register_prefix_parse_fn(TokenType::MINUS, Parser::parse_prefix_expression);
         p.next_token();
         p.next_token();
         p
@@ -123,10 +125,18 @@ impl Parser {
     /// Creates an error message when the parser encounters a token type
     /// that it doesn't know how to handle. This indicates that the parser
     /// needs to be extended to support new token types.
-    fn display_no_parse_function_error(&mut self, token_type: TokenType) {
+    fn display_no_parse_function_error(&mut self, token_type: &TokenType) {
         let msg = format!(
-            "No parse funtion for token type {:?} found for token `{}`",
+            "No parse function for token type {:?} found for token `{}`",
             token_type, self.curr_token.literal
+        );
+        self.errors.push(msg);
+    }
+
+    fn no_prefix_parse_function_error(&mut self, token_type: TokenType) {
+        let msg = format!(
+            "No prefix parse function found for token type {:?}",
+            token_type
         );
         self.errors.push(msg);
     }
@@ -306,13 +316,14 @@ impl Parser {
     /// Adds an error to the parser's error list if no parse function is found for
     /// the current token type.
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
-        let prefix = self.prefix_parse_fns.get(&self.curr_token.token_type);
+        let token_type = self.curr_token.token_type.clone();
+        let prefix = self.prefix_parse_fns.get(&token_type);
 
         if let Some(parse_fn) = prefix {
-            let left_exp = parse_fn(self).unwrap();
+            let left_exp = parse_fn(self)?;
             return Some(left_exp);
         } else {
-            self.display_no_parse_function_error(self.curr_token.token_type);
+            self.display_no_parse_function_error(&token_type);
             return None;
         }
     }
@@ -410,7 +421,7 @@ mod tests {
     /// - Parses the program and verifies statement count
     /// - Iterates through each statement and validates its properties
     #[test]
-    fn test_let_statements() {
+    fn test_parsing_let_statements() {
         // Input containing three let statements with different identifiers
         let input = r#"
 let x = 5;
@@ -522,7 +533,7 @@ let foobar = 838383;
     /// - Parses the program and verifies statement count
     /// - Iterates through each statement and validates its properties
     #[test]
-    fn test_return_statements() {
+    fn test_parsing_return_statements() {
         // Input containing three return statements with different return values
         let input = r#"
 return 5;
@@ -568,7 +579,7 @@ return 993322;
     /// This test verifies that a single return statement is correctly parsed
     /// and identified as a ReturnStatement in the AST.
     #[test]
-    fn test_return_statement() {
+    fn test_parsing_return_statement() {
         let input = "return 5;".to_string();
 
         let l = Lexer::new(input);
@@ -638,7 +649,7 @@ return 993322;
     /// This test verifies that a single identifier expression is correctly parsed
     /// and identified as an IdentifierExpression in the AST.
     #[test]
-    fn test_identifier_expression() {
+    fn test_parsing_identifier_expression() {
         // Creates a lexer and parser from input containing a single identifier expression
         let input = "foobar;".to_string();
         let l = Lexer::new(input);
@@ -686,7 +697,7 @@ return 993322;
     /// and identified as an IntegerLiteralExpression in the AST.
     #[test]
 
-    fn test_integer_literal_expression() {
+    fn test_parsing_integer_literal_expression() {
         let input = "5;".to_string();
         // Creates a lexer and parser from input
         let l = Lexer::new(input);
@@ -722,5 +733,104 @@ return 993322;
             "int_lit.token_literal() is not 5. got={}",
             int_lit.token_literal()
         );
+    }
+
+    /// Tests parsing of prefix expressions (e.g., `!5`, `-15`, `!foobar`, `-foobar`).
+    ///
+    /// This test verifies that prefix expressions with BANG (!) and MINUS (-) operators
+    /// are correctly parsed and identified as PrefixExpression in the AST. It tests
+    /// both operators with integer literals and identifiers.
+    #[test]
+    fn test_parsing_prefix_expressions() {
+        // Test cases: (input, expected_operator, expected_right_value)
+        let prefix_tests: Vec<(&str, &str, &str)> = vec![
+            ("!5;", "!", "5"),
+            ("-15;", "-", "15"),
+            ("!foobar;", "!", "foobar"),
+            ("-foobar;", "-", "foobar"),
+        ];
+
+        for (input, expected_operator, expected_right_value) in prefix_tests {
+            // Creates a lexer and parser from input containing a prefix expression
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+
+            // Parses the program
+            let program = p.parse_program();
+
+            // Checks for any parser errors
+            check_parser_errors(&p);
+
+            // Verifies that the program has exactly 1 statement
+            assert_eq!(
+                program.statements.len(),
+                1,
+                "program.statements does not contain 1 statement. got={}",
+                program.statements.len()
+            );
+
+            // Extracts the first statement from the program
+            let stmt = &program.statements[0];
+
+            // Verifies that the statement is an ExpressionStatement
+            let expr_stmt = match stmt {
+                Statement::Expression(expr_stmt) => expr_stmt,
+                _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+            };
+
+            // Verifies that the expression is a PrefixExpression
+            let prefix_expr = match &expr_stmt.value {
+                Expression::PrefixExpression(pe) => pe,
+                _ => panic!("expr is not a PrefixExpression. got={:?}", expr_stmt.value),
+            };
+
+            // Verifies that the prefix operator matches the expected operator
+            assert_eq!(
+                prefix_expr.operator, expected_operator,
+                "prefix_expr.operator is not '{}'. got={}",
+                expected_operator, prefix_expr.operator
+            );
+
+            // Tests the right-hand expression based on its type
+            match &*prefix_expr.right {
+                Expression::IntegerLiteral(int_lit) => {
+                    // Verifies that the integer literal's value matches the expected value
+                    let expected_int: i64 = expected_right_value.parse::<i64>().unwrap();
+                    assert_eq!(
+                        int_lit.value, expected_int,
+                        "int_lit.value is not {}. got={}",
+                        expected_int, int_lit.value
+                    );
+                    // Verifies that the integer literal's token literal matches the expected value
+                    assert_eq!(
+                        int_lit.token_literal(),
+                        expected_right_value,
+                        "int_lit.token_literal() is not '{}'. got='{}'",
+                        expected_right_value,
+                        int_lit.token_literal()
+                    );
+                }
+                Expression::Identifier(ident) => {
+                    // Verifies that the identifier's value matches the expected value
+                    assert_eq!(
+                        ident.value, expected_right_value,
+                        "ident.value is not '{}'. got='{}'",
+                        expected_right_value, ident.value
+                    );
+                    // Verifies that the identifier's token literal matches the expected value
+                    assert_eq!(
+                        ident.token_literal(),
+                        expected_right_value,
+                        "ident.token_literal() is not '{}'. got='{}'",
+                        expected_right_value,
+                        ident.token_literal()
+                    );
+                }
+                _ => panic!(
+                    "prefix_expr.right is not IntegerLiteral or Identifier. got={:?}",
+                    prefix_expr.right
+                ),
+            }
+        }
     }
 }
