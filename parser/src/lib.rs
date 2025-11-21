@@ -321,10 +321,10 @@ impl Parser {
 
         if let Some(parse_fn) = prefix {
             let left_exp = parse_fn(self)?;
-            return Some(left_exp);
+            Some(left_exp)
         } else {
             self.display_no_parse_function_error(&token_type);
-            return None;
+            None
         }
     }
 

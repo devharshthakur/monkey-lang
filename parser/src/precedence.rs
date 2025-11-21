@@ -7,7 +7,7 @@
 /// Operator precedence levels for parsing expressions.
 /// Higher values indicate higher precedence.
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Precedence {
     /// Lowest precedence (used as default)
