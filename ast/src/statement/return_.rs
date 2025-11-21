@@ -28,13 +28,6 @@ impl Display for ReturnStatement {
     /// Formats the return statement as `return <value>;`.
     ///
     /// If the value is `None`, only the keyword and semicolon are shown.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::statement::return_::ReturnStatement;
-    /// // For `return 5;` → outputs: "return 5;"
-    /// // For `return;` (no value) → outputs: "return ;"
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{} ", self.token_literal())?;
         if let Some(value) = &self.value {

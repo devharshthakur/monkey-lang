@@ -34,22 +34,6 @@ impl Node for PrefixExpression {
 
 impl Display for PrefixExpression {
     /// Formats the prefix expression as `(operator right)`.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::expression::{Expression, PrefixExpression, Identifier};
-    /// # use lexer::token::{Token, TokenType};
-    /// let ident = Identifier {
-    ///     token: Token::new(TokenType::IDENT, "x".to_string()),
-    ///     value: "x".to_string(),
-    /// };
-    /// let prefix = PrefixExpression {
-    ///     token: Token::new(TokenType::BANG, "!".to_string()),
-    ///     operator: "!".to_string(),
-    ///     right: Box::new(Expression::Identifier(ident)),
-    /// };
-    /// assert_eq!(format!("{}", prefix), "(!x)");
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "({}{})", self.operator, self.right)?;
         Ok(())

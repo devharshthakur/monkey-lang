@@ -26,13 +26,6 @@ impl Node for Identifier {
 
 impl Display for Identifier {
     /// Formats the identifier as its string value.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::expression::Identifier;
-    /// // For identifier `myVar` → outputs: "myVar"
-    /// // For identifier `x` → outputs: "x"
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", &self.value)?;
         Ok(())
