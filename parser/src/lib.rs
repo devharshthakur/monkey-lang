@@ -13,7 +13,7 @@ mod precedence;
 
 use crate::precedence::Precedence;
 use ast::{
-    expression::{Expression, Identifier, PrefixExpression},
+    expression::{infix, Expression, Identifier, PrefixExpression},
     literals::integer::IntegerLiteral,
     statement::{
         expr::ExpressionStatement, let_::LetStatement, return_::ReturnStatement, Statement,
@@ -58,10 +58,20 @@ impl Parser {
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
+        // Register prefix parse functions
         p.register_prefix_parse_fn(TokenType::IDENT, Parser::parse_identifier);
         p.register_prefix_parse_fn(TokenType::INT, Parser::parse_integer_literal);
         p.register_prefix_parse_fn(TokenType::BANG, Parser::parse_prefix_expression);
         p.register_prefix_parse_fn(TokenType::MINUS, Parser::parse_prefix_expression);
+        // Register Infix parse functions
+        p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::SLASH, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::ASTERISK, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::EQ, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::NOTEQ, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::LT, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::GT, Parser::parse_infix_expression);
         p.next_token();
         p.next_token();
         p
@@ -288,7 +298,7 @@ impl Parser {
     fn parse_expression_statement(&mut self) -> ExpressionStatement {
         let stmt = ExpressionStatement {
             token: self.curr_token.clone(),
-            value: self.parse_expression(Precedence::LOWEST).unwrap(),
+            value: self.parse_expression(Precedence::LOWEST as i32).unwrap(),
         };
 
         // Optional semicolon for REPL
@@ -315,17 +325,36 @@ impl Parser {
     /// # Errors
     /// Adds an error to the parser's error list if no parse function is found for
     /// the current token type.
-    fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
+    fn parse_expression(&mut self, precedence: i32) -> Option<Expression> {
         let token_type = self.curr_token.token_type.clone();
         let prefix = self.prefix_parse_fns.get(&token_type);
-
-        if let Some(parse_fn) = prefix {
-            let left_exp = parse_fn(self)?;
-            return Some(left_exp);
+        // If the prefix parse function is found, parse the left-hand side expression and returns an Expression
+        let mut left = if let Some(prefix_parse_fn) = prefix {
+            let left_exp = prefix_parse_fn(self)?;
+            left_exp
         } else {
-            self.display_no_parse_function_error(&token_type);
             return None;
+        };
+
+        // If the precedence is less than the peek precedence, parse the infix expression
+        while !self.is_peek_token(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
+            // Extract token type first to end the borrow before mutating self
+            let peek_token_type = self.peek_token.token_type.clone();
+            let infix = self.infix_parse_fns.get(&peek_token_type).copied();
+            // If the infix parse function is not found, return the left-hand side expression
+            if infix.is_none() {
+                return Some(left);
+            }
+            self.next_token();
+            // If the infix parse function is found, parse the right-hand side expression with the precedence level and returns an Expression
+            if let Some(infix_parse_fn) = infix {
+                left = infix_parse_fn(self, left)?;
+            } else {
+                return Some(left);
+            }
         }
+
+        Some(left)
     }
 
     /// Parses an integer literal expression from the current token.
@@ -341,7 +370,7 @@ impl Parser {
     /// panic if it's not, which should be caught during lexing).
     fn parse_integer_literal(&mut self) -> Option<Expression> {
         let token = self.curr_token.clone();
-        let value = self.curr_token.literal.parse::<i64>().unwrap();
+        let value = token.literal.parse::<i64>().unwrap();
         Some(Expression::IntegerLiteral(IntegerLiteral { token, value }))
     }
 
@@ -362,10 +391,64 @@ impl Parser {
         self.next_token();
 
         // Parse the right-hand expression with PREFIX precedence
-        let right = self.parse_expression(Precedence::PREFIX)?;
+        let right = self.parse_expression(Precedence::PREFIX as i32)?;
 
         Some(Expression::PrefixExpression(PrefixExpression {
             token,
+            operator,
+            right: Box::new(right),
+        }))
+    }
+    /// Returns the precedence level for the next token
+    /// If no precedence is found, returns the lowest precedence
+    fn peek_precedence(&self) -> i32 {
+        let token_type = &self.peek_token.token_type;
+        let precedence = Precedence::from_token_type(token_type);
+        precedence
+    }
+
+    /// Returns the precedence level for the current token
+    /// If no precedence is found, returns the lowest precedence
+    fn curr_precedence(&self) -> i32 {
+        let token_type = &self.curr_token.token_type.clone();
+        let precedence = Precedence::from_token_type(token_type);
+        precedence
+    }
+    /// Parses an infix expression (e.g., `5 + 5`, `x == y`).
+    ///
+    /// Expects the current token to be an infix operator (PLUS, MINUS, SLASH, ASTERISK, EQ, NOTEQ, LT, GT).
+    /// Parses the left-hand side expression, the operator, and the right-hand side expression.
+    /// Returns an InfixExpression wrapped in an Expression variant.
+    ///
+    /// # Parameters
+    /// - `left`: The left-hand side expression
+    /// - `operator`: The infix operator
+    /// - `right`: The right-hand side expression
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing an `InfixExpression` variant if parsing succeeds.
+    /// The function assumes the token literal is a valid infix operator string (parsing will
+    /// panic if it's not, which should be caught during lexing).
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if no parse function is found for
+    /// the current token type.
+    fn parse_infix_expression(&mut self, left: Expression) -> Option<Expression> {
+        // Expects the current token to be an infix operator.
+        let token = self.curr_token.clone();
+        let operator = self.curr_token.literal.clone();
+
+        // Get the precedence level for the current token which is the operator of the infix expression and advances the token
+        let precedence = self.curr_precedence();
+
+        // Advance to the next token to point to the right operand
+        self.next_token();
+
+        // Parse the right-hand side expression with the precedence level and returns an Expression
+        let right = self.parse_expression(precedence)?;
+        Some(Expression::InfixExpression(infix::InfixExpression {
+            token,
+            left: Box::new(left),
             operator,
             right: Box::new(right),
         }))
@@ -394,13 +477,16 @@ mod tests {
     /// - Panics with a summary of the error count if errors are present
     fn check_parser_errors(p: &Parser) {
         let errors = p.errors();
+
         if errors.is_empty() {
             return;
         }
         println!("parser errors:");
+
         for err in errors {
             println!("{}", err);
         }
+
         panic!("parser has {:?} errors", errors.len());
     }
 
@@ -831,6 +917,116 @@ return 993322;
                     prefix_expr.right
                 ),
             }
+        }
+    }
+    /// Its a helper function which tests an integer literal expression.
+    ///
+    /// This test verifies that an integer literal expression is correctly parsed
+    /// and identified as an IntegerLiteralExpression in the AST.
+    ///
+    /// # Parameters
+    /// - `exp`: The expression to test
+    /// - `value`: The expected value of the integer literal
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails (standard Rust test behavior)
+    fn test_integer_literal(exp: Expression, value: i64) -> bool {
+        // Verifies that the expression is an IntegerLiteral
+        let int_lit = match exp {
+            Expression::IntegerLiteral(il) => il,
+            _ => {
+                panic!("il not IntegerLiteral. got={:?}", exp);
+            }
+        };
+
+        // Verifies that the integer literal's value matches the expected value
+        if int_lit.value != value {
+            panic!("integ.Value not {}. got={}", value, int_lit.value);
+        }
+
+        // Verifies that the integer literal's token literal matches the expected value
+        let expected_token_literal = value.to_string();
+        if int_lit.token_literal() != expected_token_literal {
+            panic!(
+                "integ.TokenLiteral not {}. got='{}'",
+                value,
+                int_lit.token_literal()
+            );
+        }
+
+        true
+    }
+
+    #[test]
+    fn test_parsing_infix_expression() {
+        let infix_tests: Vec<(&str, i32, &str, i32)> = vec![
+            ("5 + 5;", 5, "+", 5),
+            ("5 - 5;", 5, "-", 5),
+            ("5 * 5;", 5, "*", 5),
+            ("5 / 5;", 5, "/", 5),
+            ("5 > 5;", 5, ">", 5),
+            ("5 < 5;", 5, "<", 5),
+            ("5 == 5;", 5, "==", 5),
+            ("5 != 5;", 5, "!=", 5),
+        ];
+
+        for (input, left_value, operator, right_value) in infix_tests {
+            // Creates a lexer and parser from input
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+
+            // Checks for any parser errors and verifies that the program has exactly 1 statement
+            check_parser_errors(&p);
+            assert_eq!(program.statements.len(), 1);
+
+            // Verify that the statement is an ExpressionStatement
+            let stmt = &program.statements[0];
+            let expr_stmt = match stmt {
+                Statement::Expression(expr_stmt) => expr_stmt,
+                _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+            };
+
+            // Verify that the expression is an InfixExpression
+            let infix_expr = match &expr_stmt.value {
+                Expression::InfixExpression(ie) => ie,
+                _ => panic!("expr is not an InfixExpression. got={:?}", expr_stmt.value),
+            };
+
+            // Verify that the left expression's value matches the expected value
+            let left_val = match &*infix_expr.left {
+                Expression::IntegerLiteral(int_lit) => int_lit.value as i32,
+                _ => panic!(
+                    "infix_expr.left is not the expected value. got={:?}",
+                    infix_expr.left
+                ),
+            };
+            assert_eq!(
+                left_val, left_value,
+                "left value mismatch. expected={}, got={}",
+                left_value, left_val
+            );
+            // Verify that the operator matches the expected operator
+            assert_eq!(
+                infix_expr.operator, operator,
+                "operator mismatch. expected='{}', got='{}'",
+                operator, infix_expr.operator
+            );
+
+            // Verify that the right expression's value matches the expected value and
+            let right_val = match &*infix_expr.right {
+                Expression::IntegerLiteral(int_lit) => int_lit.value as i32,
+                _ => panic!(
+                    "infix_expr.right is not the expected value. got={:?}",
+                    infix_expr.right
+                ),
+            };
+            assert_eq!(
+                right_val, right_value,
+                "right value mismatch. expected={}, got={}",
+                right_value, right_val
+            );
         }
     }
 }

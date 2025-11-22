@@ -29,13 +29,6 @@ impl Node for Statement {
 
 impl Display for Statement {
     /// Formats the statement as a string by delegating to the specific statement type.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::statement::Statement;
-    /// // LetStatement: "let x = 5;"
-    /// // ReturnStatement: "return 10;"
-    /// ```
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Statement::Let(stmt) => write!(f, "{}", stmt),

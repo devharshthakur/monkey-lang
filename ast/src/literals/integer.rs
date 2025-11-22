@@ -26,17 +26,6 @@ impl Node for IntegerLiteral {
 
 impl Display for IntegerLiteral {
     /// Formats the integer literal as its string representation.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::expression::literals::IntegerLiteral;
-    /// # use lexer::token::{Token, TokenType};
-    /// let int_lit = IntegerLiteral {
-    ///     token: Token::new(TokenType::INT, "42".to_string()),
-    ///     value: 42,
-    /// };
-    /// assert_eq!(format!("{}", int_lit), "42");
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.value)
     }

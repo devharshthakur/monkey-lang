@@ -1,14 +1,20 @@
 # Monkey Language Interpreter (Go)
 
-This is the implementation of the Monkey programming language interpreter in Go, based on ["Writing an Interpreter in Go"](https://interpreterbook.com/) written by Thorsten Ball, of which we are making the rust implementation
+This folder contains the original Go implementation of the Monkey programming language interpreter from ["Writing an Interpreter in Go"](https://interpreterbook.com/) by Thorsten Ball.
+This is provided by the author himself to refer while reading the code.
 
-## Features
+I'm using this as a reference while reimplementing the interpreter in Rust. The Rust implementation progress is tracked in [`docs/checklist.md`](../docs/checklist.md).
 
-The interpreter consists of four main components: **Lexer** for tokenizing Monkey source code, **Parser** for building Abstract Syntax Tree (AST) from tokens, **Evaluator** for executing AST with environment-based evaluation, and **REPL** for interactive read-eval-print loop.
+## Project Structure
 
-## Language Support
-
-Supports **Data Types** including Integers, Booleans, Strings, Arrays, and Hashes. **Expressions** include arithmetic, comparison, and prefix/infix operators. **Statements** include `let` bindings and `return` statements. **Control Flow** supports `if/else` expressions. **Functions** are first-class with closures. **Built-ins** include `len`, `puts`, `first`, `last`, `rest`, and `push`.
+- **`ast/`** - Abstract Syntax Tree node definitions
+- **`lexer/`** - Tokenizes Monkey source code into tokens
+- **`parser/`** - Builds AST from tokens using recursive descent parsing
+- **`evaluator/`** - Executes AST nodes with environment-based evaluation
+- **`object/`** - Runtime object representations and environment management
+- **`repl/`** - Interactive read-eval-print loop
+- **`token/`** - Token type definitions
+- **`main.go`** - Entry point for running the interpreter
 
 ## Usage
 
@@ -16,21 +22,7 @@ Supports **Data Types** including Integers, Booleans, Strings, Arrays, and Hashe
 go run main.go
 ```
 
-## Project Structure
-
-```text
-go/
-├── lexer/      # Tokenization
-├── parser/     # AST construction
-├── evaluator/  # Expression evaluation
-├── object/     # Runtime objects and environment
-├── repl/       # Interactive REPL
-└── token/      # Token definitions
-```
-
 ## Testing
-
-Run tests for each module:
 
 ```bash
 go test ./...

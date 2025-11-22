@@ -26,7 +26,7 @@ pub enum TokenType {
     RPAREN,    // ")"
     LBRACE,    // "{"
     RBRACE,    // "}"
-
+    // Keywords
     FUNCTION, // "fn"
     LET,      // "let"
     IF,       // "if"

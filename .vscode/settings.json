@@ -1,0 +1,5 @@
+{
+    "npm.enableRunFromFolder": true,
+    "scm.compactFolders": false,
+    "material-icon-theme.activeIconPack": "react"
+}

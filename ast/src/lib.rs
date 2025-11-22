@@ -36,14 +36,6 @@ impl Node for Program {
 
 impl Display for Program {
     /// Formats the program as a string by concatenating all statements.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::Program;
-    /// # use ast::statement::Statement;
-    /// // For a program with statements: `let x = 5;` and `return x;`
-    /// // This will output: "let x = 5;return x;"
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         for stmt in &self.statements {
             write!(f, "{}", stmt)?;

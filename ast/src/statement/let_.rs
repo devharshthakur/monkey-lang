@@ -46,13 +46,6 @@ impl Display for LetStatement {
     /// Formats the let statement as `let <name> = <value>;`.
     ///
     /// If the value is `None`, only the identifier is shown.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use ast::statement::let_::LetStatement;
-    /// // For `let x = 5;` → outputs: "let x = 5;"
-    /// // For `let y;` (no value) → outputs: "let y ;"
-    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{} ", self.token_literal())?;
         write!(f, "{}", self.name)?;
