@@ -72,6 +72,7 @@ impl Parser {
         p.register_infix_parse_fn(TokenType::NOTEQ, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::LT, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::GT, Parser::parse_infix_expression);
+        // Advance the token buffer to have a two-token lookahead
         p.next_token();
         p.next_token();
         p
@@ -958,6 +959,20 @@ return 993322;
         true
     }
 
+    /// Tests parsing of infix expressions (e.g., `5 + 5`, `5 - 5`, `5 * 5`, `5 / 5`, `5 > 5`, `5 < 5`, `5 == 5`, `5 != 5`).
+    ///
+    /// This test verifies that infix expressions with the operators +, -, *, /, >, <, ==, != are correctly parsed
+    /// and identified as InfixExpression in the AST.
+    ///
+    /// # Parameters
+    /// - `input`: The input string containing the infix expression
+    /// - `left_value`: The expected value of the left operand
+    /// - `operator`: The infix operator
+    /// - `right_value`: The expected value of the right operand
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails.
     #[test]
     fn test_parsing_infix_expression() {
         let infix_tests: Vec<(&str, i32, &str, i32)> = vec![
@@ -1026,6 +1041,58 @@ return 993322;
                 right_val, right_value,
                 "right value mismatch. expected={}, got={}",
                 right_value, right_val
+            );
+        }
+    }
+
+    /// Tests operator precedence parsing to ensure expressions are parsed correctly
+    /// according to operator precedence rules.
+    ///
+    /// This test verifies that:
+    /// 1. Prefix operators have higher precedence than infix operators
+    /// 2. Multiplication/division have higher precedence than addition/subtraction
+    /// 3. Comparison operators have lower precedence than arithmetic operators
+    /// 4. Equality operators have lower precedence than comparison operators
+    /// 5. Left-associative operators are grouped correctly
+    /// 6. Complex expressions with multiple precedence levels are parsed correctly
+    #[test]
+    fn test_operator_precedence_parsing() {
+        let tests: Vec<(&str, &str)> = vec![
+            // Prefix operators with infix operators
+            ("-a * b;", "((-a) * b)"),
+            ("!-a;", "(!(-a))"),
+            // Left-associative operators
+            ("a + b + c;", "((a + b) + c)"),
+            ("a + b - c;", "((a + b) - c)"),
+            ("a * b * c;", "((a * b) * c)"),
+            ("a * b / c;", "((a * b) / c)"),
+            // Precedence: multiplication/division higher than addition/subtraction
+            ("a + b / c;", "(a + (b / c))"),
+            ("a + b * c + d / e - f;", "(((a + (b * c)) + (d / e)) - f)"),
+            // Multiple statements
+            ("3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"),
+            // Comparison operators
+            ("5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))"),
+            // Mixed precedence
+            (
+                "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            ),
+        ];
+
+        for (input, expected) in tests {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+
+            check_parser_errors(&p);
+
+            let actual = format!("{}", program);
+            assert_eq!(
+                actual, expected,
+                "expected={:?}, got={:?}",
+                expected, actual
             );
         }
     }
