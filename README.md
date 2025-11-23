@@ -1,7 +1,11 @@
-# Monkey-Lang Interpreter & Compiler in Rust
+# Monkey Language
+<img width="250" height="282" alt="monkey_lang" src="https://github.com/user-attachments/assets/f1c7457b-8535-4d2c-a4fa-4d3ca16dda9a" />
+
+## What’s Monkey?
+
+Monkey has a C-like syntax, supports **variable bindings**, **prefix** and **infix operators**, has **first-class** and **higher-order functions**, can handle **closures** with ease and has **integers**, **booleans**, **arrays** and **hashes** built-in.
 
 This project is an interpreter and compiler for the Monkey programming language, inspired by the book ["Writing an Interpreter in Go" by Thorsten Ball](https://interpreterbook.com/).
-
 Unlike the original implementation in Go, this project is written in **Rust** and aims to provide a modern, safe, and efficient version of the Monkey language tools.
 
 ## Project Goals
@@ -14,6 +18,7 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 ## Running & Development
 
 A `Justfile` is provided for developer convenience. You can use it to run the project and perform other common tasks. As the project progresses, more commands may be added to the Justfile to help with development and automation.
+Below commands in just is given for actual commands refer [JUSTFILE](/JUSTFILE)
 
 To run the project:
 
@@ -45,14 +50,15 @@ Project progress is now tracked in [`checklist.md`](./docs/checklist.md), which 
 
 ## References
 
-- [Writing an Interpreter in Go](https://interpreterbook.com/)
-- [Monkey Language Specification](https://github.com/miguelmota/monkey-lang)
+1. [Writing an Interpreter in `Go`](https://interpreterbook.com/)
+2. [Monkey Language Specification](https://github.com/miguelmota/monkey-lang)
+3. [The original `Go` codebase](/go)
 
 ## Status
 
 See [`checklist.md`](./docs/checklist.md) for up-to-date progress and implementation status.
 
-Contributions and feedback are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md).
+Contributions and feedback are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) to understand how and what to contribute.
 
 ## License
 
