@@ -7,7 +7,7 @@ fn main() -> io::Result<()> {
         .unwrap_or_else(|| "unknownuser".to_string());
 
     println!(
-        "Hello {} this is monkey programming language \n Feel free to type in commands",
+        "Hello {} this is monkey programming language(Currently in development)\n Feel free to type in commands\n Not all features are implemented.\n In REPL lexer is functional",
         username
     );
 
