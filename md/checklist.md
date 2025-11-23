@@ -20,13 +20,13 @@ This checklist tracks our progress through the implementation of the Monkey prog
 - [x] Implement Program structure
 - [x] Parse let statements (basic structure - expression values not yet parsed)
 - [x] Parse return statements (basic structure - expression values not yet parsed)
-- [x] Parse identifiers (AST node exists)
-- [x] Write parser tests (tests for let and return statements exist)
-- [ ] Parse expression statements
-- [ ] Parse integer literals
+- [x] Parse identifiers
+- [x] Parse expression statements
+- [x] Parse integer literals
+- [x] Parse prefix expressions (`!`, `-`)
+- [x] Parse infix expressions (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`)
+- [x] Write parser tests (tests for let statements, return statements, identifiers, integer literals, prefix expressions, infix expressions, and operator precedence)
 - [ ] Parse boolean literals (`true`, `false`)
-- [ ] Parse prefix expressions (`!`, `-`)
-- [ ] Parse infix expressions (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`)
 - [ ] Parse grouped expressions (parentheses)
 - [ ] Parse if/else expressions
 - [ ] Parse function literals
