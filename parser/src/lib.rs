@@ -10,6 +10,7 @@
 //! - Reports user-friendly errors via the `errors` vector.
 
 mod precedence;
+mod test_helper;
 
 use crate::precedence::Precedence;
 use ast::{
@@ -25,6 +26,9 @@ use lexer::{
     Lexer,
 };
 use std::collections::HashMap;
+use test_helper::{
+    check_parser_errors, is_return_statement, test_integer_literal, test_let_statement,
+};
 
 /// A parser that converts tokens from a lexer into an Abstract Syntax Tree (AST).
 ///
@@ -461,36 +465,6 @@ mod tests {
     use super::*;
     use ast::Node;
 
-    /// Checks for parser errors and prints them if any exist.
-    ///
-    /// This function verifies the parser's error list and prints any errors
-    /// that were collected during parsing. If no errors are found, it returns
-    /// early. If errors are present, it prints each error message and then
-    /// panics with a summary of the error count. This is used to ensure that
-    /// the parser correctly handles invalid input and reports any issues
-    /// encountered during the parsing process.
-    ///
-    /// # Parameters
-    /// - `p`: A reference to the Parser instance to check for errors
-    ///
-    /// # Returns
-    /// - `None` if no errors are found
-    /// - Panics with a summary of the error count if errors are present
-    fn check_parser_errors(p: &Parser) {
-        let errors = p.errors();
-
-        if errors.is_empty() {
-            return;
-        }
-        println!("parser errors:");
-
-        for err in errors {
-            println!("{}", err);
-        }
-
-        panic!("parser has {:?} errors", errors.len());
-    }
-
     /// Tests parsing of multiple let statements.
     ///
     /// This test verifies that the parser correctly:
@@ -551,58 +525,6 @@ let foobar = 838383;
         }
     }
 
-    /// Helper function to test a single let statement.
-    ///
-    /// This function validates that a statement is a `LetStatement` and that
-    /// its identifier matches the expected name. It uses pattern matching to
-    /// extract the `LetStatement` from the `Statement` enum variant.
-    ///
-    /// # Parameters
-    /// - `s`: A reference to a Statement enum to test
-    /// - `name`: The expected identifier name (e.g., "x", "y", "foobar")
-    ///
-    /// # Returns
-    /// - `true` if all assertions pass
-    /// - Panics if any assertion fails (standard Rust test behavior)
-    ///
-    /// # Validations
-    /// 1. Verifies the statement's token literal is "let"
-    /// 2. Confirms the statement is actually a `LetStatement` (via pattern matching)
-    /// 3. Checks that the identifier's value matches the expected name
-    /// 4. Verifies the identifier's token literal matches the expected name
-    fn test_let_statement(s: &Statement, name: &str) -> bool {
-        // Verify the statement's token literal is "let"
-        assert_eq!(
-            s.token_literal(),
-            "let",
-            "s.token_literal() not 'let'. got={}",
-            s.token_literal()
-        );
-
-        // Extract Let statement from Statement enum using pattern matching
-        let let_stmt = match s {
-            Statement::Let(stmt) => stmt,
-            _ => panic!("s is not a LetStatement"),
-        };
-
-        // Verify the identifier's value matches the expected name
-        assert_eq!(
-            let_stmt.name.value, name,
-            "letStmt.name.value not '{}'. got={}",
-            name, let_stmt.name.value
-        );
-
-        // Verify the identifier's token literal also matches
-        assert_eq!(
-            let_stmt.name.token_literal(),
-            name,
-            "letStmt.name.token_literal() not '{}'. got={}",
-            name,
-            let_stmt.name.token_literal()
-        );
-
-        true
-    }
     /// Tests parsing of multiple return statements.
     ///
     /// This test verifies that the parser correctly:
@@ -687,48 +609,6 @@ return 993322;
             is_return_statement(stmt),
             "statement is not a ReturnStatement"
         );
-    }
-
-    /// Helper function to test a single return statement.
-    ///
-    /// This function validates that a statement is a `ReturnStatement` and that
-    /// its token literal is "return". It uses pattern matching to extract the
-    /// `ReturnStatement` from the `Statement` enum variant.
-    ///
-    /// # Parameters
-    /// - `s`: A reference to a Statement enum to test
-    ///
-    /// # Returns
-    /// - `true` if all assertions pass
-    /// - Panics if any assertion fails (standard Rust test behavior)
-    ///
-    /// # Validations
-    /// 1. Verifies the statement's token literal is "return"
-    /// 2. Confirms the statement is actually a `ReturnStatement` (via pattern matching)
-    fn is_return_statement(s: &Statement) -> bool {
-        // Verify the statement's token literal is "return"
-        assert_eq!(
-            s.token_literal(),
-            "return",
-            "token_literal() is not 'return'. got={}",
-            s.token_literal()
-        );
-
-        // Extract Return statement from Statement enum using pattern matching
-        let return_stmt = match s {
-            Statement::Return(stmt) => stmt,
-            _ => panic!("s is not a ReturnStatement. got={:?}", s),
-        };
-
-        // Verify the return statement's token literal matches
-        assert_eq!(
-            return_stmt.token_literal(),
-            "return",
-            "returnStmt.token_literal() not 'return'. got={}",
-            return_stmt.token_literal()
-        );
-
-        true
     }
 
     /// Tests parsing of a single identifier expression.
@@ -920,44 +800,6 @@ return 993322;
             }
         }
     }
-    /// Its a helper function which tests an integer literal expression.
-    ///
-    /// This test verifies that an integer literal expression is correctly parsed
-    /// and identified as an IntegerLiteralExpression in the AST.
-    ///
-    /// # Parameters
-    /// - `exp`: The expression to test
-    /// - `value`: The expected value of the integer literal
-    ///
-    /// # Returns
-    /// - `true` if all assertions pass
-    /// - Panics if any assertion fails (standard Rust test behavior)
-    fn test_integer_literal(exp: Expression, value: i64) -> bool {
-        // Verifies that the expression is an IntegerLiteral
-        let int_lit = match exp {
-            Expression::IntegerLiteral(il) => il,
-            _ => {
-                panic!("il not IntegerLiteral. got={:?}", exp);
-            }
-        };
-
-        // Verifies that the integer literal's value matches the expected value
-        if int_lit.value != value {
-            panic!("integ.Value not {}. got={}", value, int_lit.value);
-        }
-
-        // Verifies that the integer literal's token literal matches the expected value
-        let expected_token_literal = value.to_string();
-        if int_lit.token_literal() != expected_token_literal {
-            panic!(
-                "integ.TokenLiteral not {}. got='{}'",
-                value,
-                int_lit.token_literal()
-            );
-        }
-
-        true
-    }
 
     /// Tests parsing of infix expressions (e.g., `5 + 5`, `5 - 5`, `5 * 5`, `5 / 5`, `5 > 5`, `5 < 5`, `5 == 5`, `5 != 5`).
     ///
@@ -986,7 +828,7 @@ return 993322;
             ("5 != 5;", 5, "!=", 5),
         ];
 
-        for (input, left_value, operator, right_value) in infix_tests {
+        for (input, expected_left_value, expected_operator, expected_right_value) in infix_tests {
             // Creates a lexer and parser from input
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
@@ -1009,7 +851,7 @@ return 993322;
                 _ => panic!("expr is not an InfixExpression. got={:?}", expr_stmt.value),
             };
 
-            // Verify that the left expression's value matches the expected value
+            // Verify that the left expression is an IntegerLiteral
             let left_val = match &*infix_expr.left {
                 Expression::IntegerLiteral(int_lit) => int_lit.value as i32,
                 _ => panic!(
@@ -1017,16 +859,17 @@ return 993322;
                     infix_expr.left
                 ),
             };
+            // Verify that the left value matches the expected value
             assert_eq!(
-                left_val, left_value,
+                left_val, expected_left_value,
                 "left value mismatch. expected={}, got={}",
-                left_value, left_val
+                expected_left_value, left_val
             );
             // Verify that the operator matches the expected operator
             assert_eq!(
-                infix_expr.operator, operator,
+                infix_expr.operator, expected_operator,
                 "operator mismatch. expected='{}', got='{}'",
-                operator, infix_expr.operator
+                expected_operator, infix_expr.operator
             );
 
             // Verify that the right expression's value matches the expected value and
@@ -1038,9 +881,9 @@ return 993322;
                 ),
             };
             assert_eq!(
-                right_val, right_value,
+                right_val, expected_right_value,
                 "right value mismatch. expected={}, got={}",
-                right_value, right_val
+                expected_right_value, right_val
             );
         }
     }
