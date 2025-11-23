@@ -7,7 +7,8 @@
 Before you begin, please ensure you have the following installed:
 
 - [Rust (includes Cargo)](https://www.rust-lang.org/tools/install)
-- (Optional) [Make](https://www.gnu.org/software/make/) for developer convenience
+- (Optional) [just](https://github.com/casey/just) for developer convenience commands
+- (Optional) [pnpm](https://pnpm.io/installation) for formatting and git hooks (Node.js tooling)
 
 ## Setting Up Rust
 
@@ -22,9 +23,11 @@ Before you begin, please ensure you have the following installed:
 
 2. **If not installed, install Rust:**
    - Visit the [official Rust installation page](https://www.rust-lang.org/tools/install) or run:
+
      ```bash
      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
      ```
+
    - Follow the on-screen instructions and restart your terminal after installation.
 
 ## Running the Project
@@ -37,28 +40,53 @@ Before you begin, please ensure you have the following installed:
    ```
 
 2. **Run the project:**
+
    ```bash
    cargo run
    ```
+
    This will build and run the Monkey interpreter/compiler from the default entry point.
 
 ## Developer Convenience (Optional)
 
-A `Makefile` is provided for common tasks (like running or formatting the project). You can use it if you have `make` and `pnpm` installed:
+A `JUSTFILE` is provided for common tasks (like running, formatting, testing, and linting). You can use it if you have `just` installed:
 
 - To run the project:
+
   ```bash
-  make
+  just run
   ```
+
 - To format the codebase:
+
   ```bash
-  make format
+  just format
   ```
+
+- To run tests:
+
+  ```bash
+  just test
+  ```
+
+- To lint the code:
+
+  ```bash
+  just lint
+  ```
+
 - To see all available commands:
+
   ```bash
-  make help
+  just --list
   ```
 
----
+### Git Hooks
 
-Happy coding! 🚀
+This project uses [Husky](https://typicode.github.io/husky/) for git hooks. After cloning, run:
+
+```bash
+pnpm install
+```
+
+This will set up pre-commit hooks that automatically format code and run clippy before commits.

@@ -1,3 +1,4 @@
+use cli::print_welcome;
 use repl::start;
 use std::io;
 
@@ -6,10 +7,7 @@ fn main() -> io::Result<()> {
         .and_then(|name| name.into_string().ok())
         .unwrap_or_else(|| "unknownuser".to_string());
 
-    println!(
-        "Hello {} this is monkey programming language(Currently in development)\n Feel free to type in commands\n Not all features are implemented.\n In REPL lexer is functional",
-        username
-    );
+    print_welcome(&username);
 
     let stdin = io::stdin().lock();
     let stdout = io::stdout().lock();

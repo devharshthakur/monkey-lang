@@ -16,28 +16,9 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 - [x] Leverage Rust's safety and performance features
 - [x] Serve as a learning resource for Rust and language implementation
 
-## Running & Development
+## Setup, Running & Development
 
-A `Justfile` is provided for developer convenience. You can use it to run the project and perform other common tasks. As the project progresses, more commands may be added to the Justfile to help with development and automation.
-Below commands in just is given for actual commands refer [JUSTFILE](/JUSTFILE)
-
-To run the project:
-
-```bash
-just
-```
-
-To see all available commands:
-
-```bash
-just --list
-```
-
-To format the codebase:
-
-```bash
-just format
-```
+To setup the project refer [SETUP](./md/setup.md) file.
 
 ## Progress Tracking
 
