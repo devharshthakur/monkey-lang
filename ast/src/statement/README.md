@@ -1,13 +1,5 @@
 # Statement
 
-This folder contains all statement types for the Monkey language AST. Statements are things that do something—they represent actions or declarations in the program.
+This module contains all statement types for the Monkey language AST. Statements represent actions and declarations in the program—they are the units of execution that make up the program's structure.
 
-**Examples:**
-
-- `let x = 5;` (variable declaration)
-- `return x + 1;` (return statement)
-- `foobar(y, z);` (expression statement)
-
-## Usage
-
-Statements make up the body of programs. Each statement represents a complete action that can be executed. The parser builds a list of statements that form the program.
+Statements form the body of programs and control the flow of execution, defining what the program does step by step.

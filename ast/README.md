@@ -1,26 +1,9 @@
 # AST (Abstract Syntax Tree)
 
-Defines the Abstract Syntax Tree node types and traits for the Monkey language. This crate provides the data structures that represent parsed Monkey code.
+This crate defines the Abstract Syntax Tree structures for the Monkey language. It provides the foundational data types that represent parsed Monkey code in a structured, hierarchical format.
 
-## Core Types
-
-- **`Node`** - Trait that all AST nodes implement, providing `token_literal()` method
-- **`Program`** - Root AST node containing all top-level statements
-- **`Expression`** - Enum of all expression types
-- **`Statement`** - Enum of all statement types
+The AST serves as an intermediate representation between the source code and the execution engine, allowing for efficient manipulation and analysis of program structure.
 
 ## Dependencies
 
 - `lexer` - For token types used in AST nodes
-
-## Usage
-
-```rust
-use ast::{Program, Statement, Expression};
-
-let program = Program {
-    statements: vec![
-        // ... statements
-    ],
-};
-```

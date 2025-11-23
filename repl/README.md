@@ -1,26 +1,9 @@
 # REPL (Read-Eval-Print Loop)
 
-Provides an interactive REPL for the Monkey language. Currently tokenizes user input and prints tokens, with plans to extend to full parsing and evaluation.
+Provides an interactive command-line interface for the Monkey language. Users can enter code interactively and see results immediately, making it ideal for experimentation and learning.
 
-## Features
-
-- Interactive prompt (`>>`)
-- Reads input line by line
-- Tokenizes input and displays tokens
-- Handles empty lines gracefully
-- Supports EOF (Ctrl+D) to exit
+The REPL processes user input line by line, providing a seamless development experience.
 
 ## Dependencies
 
 - `lexer` - For tokenizing user input
-
-## Usage
-
-```rust
-use repl::start;
-use std::io;
-
-let stdin = io::stdin().lock();
-let stdout = io::stdout().lock();
-start(stdin, stdout)?;
-```
