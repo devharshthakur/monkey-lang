@@ -7,7 +7,7 @@ run:
 # Format code
 format:
     cargo fmt
-    prettier --write .
+    prettier --log-level silent --write .
 
 # Alias: fmt
 fmt: format
@@ -15,7 +15,7 @@ fmt: format
 # Check formatting
 format-check:
     cargo fmt --check
-    prettier --check .
+    prettier --ignore-path .gitignore --check .
 
 # Alias: fmtc
 fmtc: format-check

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Monkey programming language interpreter and compiler",
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --log-level silent --write .",
+    "format:check": "prettier --ignore-path .gitignore --check .",
     "prepare": "husky"
   },
   "author": "Harsh Thakur",
