@@ -563,7 +563,6 @@ let foobar = 838383;
     /// - Iterates through each statement and validates its properties
     #[test]
     fn test_parsing_return_statements() {
-        // Input containing three return statements with different return values
         let input = r#"
 return 5;
 return 10;
@@ -781,7 +780,7 @@ return 993322;
             match &*prefix_expr.right {
                 Expression::IntegerLiteral(int_lit) => {
                     // Verifies that the integer literal's value matches the expected value
-                    let expected_int: i64 = expected_right_value.parse::<i64>().unwrap();
+                    let expected_int = expected_right_value.parse::<i64>().unwrap();
                     assert_eq!(
                         int_lit.value, expected_int,
                         "int_lit.value is not {}. got={}",
@@ -917,6 +916,15 @@ return 993322;
     /// 4. Equality operators have lower precedence than comparison operators
     /// 5. Left-associative operators are grouped correctly
     /// 6. Complex expressions with multiple precedence levels are parsed correctly
+    /// 7. Boolean operators are parsed correctly
+    ///
+    /// # Parameters
+    /// - `input`: The input string containing the expression
+    /// - `expected`: The expected string containing the parsed expression
+    ///
+    /// # Returns
+    /// - `true` if all assertions pass
+    /// - Panics if any assertion fails.
     #[test]
     fn test_operator_precedence_parsing() {
         let tests: Vec<(&str, &str)> = vec![
@@ -941,6 +949,12 @@ return 993322;
                 "3 + 4 * 5 == 3 * 1 + 4 * 5;",
                 "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
             ),
+            // Boolean operators
+            ("true;", "true"),
+            ("false;", "false"),
+            ("3 > 5 == false;", "((3 > 5) == false)"),
+            ("3 < 5 == true;", "((3 < 5) == true)"),
+            ("!(true == true);", "(!(true == true))"),
         ];
 
         for (input, expected) in tests {

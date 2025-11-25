@@ -37,6 +37,23 @@ l: lint
 build:
     cargo build
 
+# Pre-commit with test
+pre-commit-with-test:
+    just format
+    just lint
+    just test
+
+# Alias: pc
+pct: pre-commit-with-test
+
+# Pre-commit without test
+pre-commit-without-test:
+    just format
+    just lint
+
+# Alias: pc
+pc: pre-commit-without-test
+
 # Clean build artifacts
 clean:
     cargo clean

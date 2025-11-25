@@ -40,7 +40,7 @@ impl Display for ReturnStatement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::Identifier;
+    use crate::expressions::Identifier;
     use lexer::token::{Token, TokenType};
 
     #[test]
