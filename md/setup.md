@@ -90,3 +90,12 @@ pnpm install
 ```
 
 This will set up pre-commit hooks that automatically format code and run clippy before commits.
+
+## Utility Scripts
+
+Automation helpers live under the `scripts/` directory:
+
+- `scripts/ts/setup-rust.ts`: TypeScript helper to bootstrap the Rust toolchain (`pnpm run setup:rust`).
+- `scripts/bash/setup-rust.sh`: Bash equivalent for environments without Node/ts-node.
+
+Check `scripts/README.md` for details on what each script does and how to customize them.
