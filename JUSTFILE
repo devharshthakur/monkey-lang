@@ -8,6 +8,7 @@ run:
 format:
     cargo fmt
     prettier --log-level silent --write .
+    shfmt -w scripts/bash
 
 # Alias: fmt
 fmt: format
@@ -16,6 +17,7 @@ fmt: format
 format-check:
     cargo fmt --check
     prettier --ignore-path .gitignore --check .
+    shfmt -d scripts/bash
 
 # Alias: fmtc
 fmtc: format-check
