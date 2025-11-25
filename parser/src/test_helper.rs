@@ -1,7 +1,12 @@
 //! This module contains helper functions for testing the parser.
 //! It makes easier to test the parser.
 use crate::Parser;
-use ast::{expression::Expression, statement::Statement, Node};
+use ast::{
+    expression::Expression,
+    literals::{BooleanLiteral, Literal},
+    statement::Statement,
+    Node,
+};
 
 /// Its a helper function which tests an integer literal expression.
 ///
@@ -196,40 +201,6 @@ pub fn test_identifier(exp: Expression, value: &str) -> bool {
     true
 }
 
-/// Enum representing the expected literal value types for testing.
-///
-/// This enum allows `test_literal_expression` to handle different
-/// literal types (integers and identifiers) in a type-safe manner.
-#[derive(Debug, Clone)]
-pub enum ExpectedLiteral {
-    Integer(i64),
-    Identifier(String),
-}
-
-impl From<i64> for ExpectedLiteral {
-    fn from(value: i64) -> Self {
-        ExpectedLiteral::Integer(value)
-    }
-}
-
-impl From<i32> for ExpectedLiteral {
-    fn from(value: i32) -> Self {
-        ExpectedLiteral::Integer(value as i64)
-    }
-}
-
-impl From<&str> for ExpectedLiteral {
-    fn from(value: &str) -> Self {
-        ExpectedLiteral::Identifier(value.to_string())
-    }
-}
-
-impl From<String> for ExpectedLiteral {
-    fn from(value: String) -> Self {
-        ExpectedLiteral::Identifier(value)
-    }
-}
-
 /// Helper function to test a literal expression based on its expected type.
 ///
 /// This function validates that an expression matches the expected literal type
@@ -245,9 +216,7 @@ impl From<String> for ExpectedLiteral {
 /// - Panics if any assertion fails (standard Rust test behavior)
 ///
 /// # Example
-/// ```
-/// use parser::test_helper::test_literal_expression;
-///
+/// ```ignore
 /// // Test integer literal (i32 or i64)
 /// test_literal_expression(expression, 5);
 /// test_literal_expression(expression, 5i64);
@@ -256,15 +225,29 @@ impl From<String> for ExpectedLiteral {
 /// test_literal_expression(expression, "foobar");
 /// test_literal_expression(expression, "foobar".to_string());
 /// ```
-pub fn test_literal_expression<E: Into<ExpectedLiteral>>(exp: Expression, expected: E) -> bool {
+pub fn test_literal_expression<E: Into<Literal>>(exp: Expression, expected: E) -> bool {
     let expected_literal = expected.into();
     match expected_literal {
-        ExpectedLiteral::Integer(value) => test_integer_literal(exp, value),
-        ExpectedLiteral::Identifier(value) => test_identifier(exp, &value),
+        Literal::Integer(il) => test_integer_literal(exp, il.value),
+        Literal::Identifier(ident) => test_identifier(exp, &ident.value),
+        Literal::Boolean(bl) => test_boolean_literal(&bl, bl.value),
+        _ => panic!(
+            "expected literal type not handled. got={:?}",
+            expected_literal
+        ),
     }
 }
 
-pub fn test_infix_expression<L: Into<ExpectedLiteral>, R: Into<ExpectedLiteral>>(
+pub fn test_boolean_literal(boolean_lit: &BooleanLiteral, value: bool) -> bool {
+    // Verify that the boolean literal's value matches the expected value
+    if boolean_lit.value != value {
+        panic!("boolean.Value not {}. got={}", value, boolean_lit.value);
+    } else {
+        true
+    }
+}
+
+pub fn test_infix_expression<L: Into<Literal>, R: Into<Literal>>(
     exp: Expression,
     left: L,
     operator: &str,
@@ -289,4 +272,38 @@ pub fn test_infix_expression<L: Into<ExpectedLiteral>, R: Into<ExpectedLiteral>>
     test_literal_expression(*infix_expr.right, right);
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use lexer::Lexer;
+
+    use super::*;
+
+    #[test]
+    fn test_infix_expressions() {
+        let tests: Vec<(&str, Literal, &str, Literal)> = vec![
+            ("5 + 5;", 5.into(), "+", 5.into()),
+            ("5 - 5;", 5.into(), "-", 5.into()),
+            ("5 * 5;", 5.into(), "*", 5.into()),
+            ("5 / 5;", 5.into(), "/", 5.into()),
+            ("alice * bob;", "alice".into(), "*", "bob".into()),
+        ];
+        for (input, left, operator, right) in tests {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+
+            check_parser_errors(&p);
+            assert_eq!(program.statements.len(), 1);
+
+            let stmt = &program.statements[0];
+            let expr_stmt = match stmt {
+                Statement::Expression(expr_stmt) => expr_stmt,
+                _ => panic!("stmt is not an ExpressionStatement"),
+            };
+
+            test_infix_expression(expr_stmt.value.clone(), left, operator, right);
+        }
+    }
 }
