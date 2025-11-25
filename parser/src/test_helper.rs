@@ -2,9 +2,9 @@
 //! It makes easier to test the parser.
 use crate::Parser;
 use ast::{
-    expression::Expression,
+    expressions::Expression,
     literals::{BooleanLiteral, Literal},
-    statement::Statement,
+    statements::Statement,
     Node,
 };
 
@@ -60,19 +60,19 @@ pub fn test_integer_literal(exp: Expression, value: i64) -> bool {
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
-pub fn test_let_statement(s: &Statement, name: &str) -> bool {
+pub fn test_let_statement(stmt: &Statement, name: &str) -> bool {
     // Verify the statement's token literal is "let"
     assert_eq!(
-        s.token_literal(),
+        stmt.token_literal(),
         "let",
         "s.token_literal() not 'let'. got={}",
-        s.token_literal()
+        stmt.token_literal()
     );
 
     // Extract Let statement from Statement enum using pattern matching
-    let let_stmt = match s {
-        Statement::Let(stmt) => stmt,
-        _ => panic!("s is not a LetStatement"),
+    let let_stmt = match stmt {
+        Statement::Let(let_stmt) => let_stmt,
+        _ => panic!("stmt is not a LetStatement"),
     };
 
     // Verify the identifier's value matches the expected name

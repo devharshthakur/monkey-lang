@@ -14,9 +14,9 @@ mod test_helper;
 
 use crate::precedence::Precedence;
 use ast::{
-    expression::{infix, Expression, Identifier, PrefixExpression},
-    literals::integer::IntegerLiteral,
-    statement::{
+    expressions::{infix, Expression, Identifier, PrefixExpression},
+    literals::{integer::IntegerLiteral, BooleanLiteral},
+    statements::{
         expr::ExpressionStatement, let_::LetStatement, return_::ReturnStatement, Statement,
     },
     Program,
@@ -67,6 +67,8 @@ impl Parser {
         p.register_prefix_parse_fn(TokenType::INT, Parser::parse_integer_literal);
         p.register_prefix_parse_fn(TokenType::BANG, Parser::parse_prefix_expression);
         p.register_prefix_parse_fn(TokenType::MINUS, Parser::parse_prefix_expression);
+        p.register_prefix_parse_fn(TokenType::TRUE, Parser::parse_boolean_literal);
+        p.register_prefix_parse_fn(TokenType::FALSE, Parser::parse_boolean_literal);
         // Register Infix parse functions
         p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
@@ -378,6 +380,24 @@ impl Parser {
         let value = token.literal.parse::<i64>().unwrap();
         Some(Expression::IntegerLiteral(IntegerLiteral { token, value }))
     }
+    /// Parses a boolean literal expression from the current token.
+    ///
+    /// Expects the current token to be of type `TRUE` or `FALSE`. Extracts the boolean value
+    /// from the token's literal string. Returns a `BooleanLiteral` expression node containing
+    /// both the original token information and the parsed boolean value.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing a `BooleanLiteral` variant if parsing succeeds.
+    /// The function assumes the token literal is a valid boolean string (parsing will
+    /// panic if it's not, which should be caught during lexing).
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if the token literal is not a valid boolean string.
+    fn parse_boolean_literal(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let value = self.curr_token.literal.parse::<bool>().unwrap();
+        Some(Expression::BooleanLiteral(BooleanLiteral { token, value }))
+    }
 
     /// Parses a prefix expression (e.g., `!true`, `-5`).
     ///
@@ -663,7 +683,6 @@ return 993322;
     /// This test verifies that a single integer literal expression is correctly parsed
     /// and identified as an IntegerLiteralExpression in the AST.
     #[test]
-
     fn test_parsing_integer_literal_expression() {
         let input = "5;".to_string();
         // Creates a lexer and parser from input

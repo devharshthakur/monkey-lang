@@ -1,4 +1,4 @@
-use crate::{expression::Expression, Node};
+use crate::{expressions::Expression, Node};
 use lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 

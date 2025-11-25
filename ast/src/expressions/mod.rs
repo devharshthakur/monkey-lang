@@ -3,7 +3,10 @@
 //! Expressions represent values and computations that evaluate to a value.
 //! Each variant wraps a specific expression type.
 
-use crate::{literals::integer::IntegerLiteral, Node};
+use crate::{
+    literals::{integer::IntegerLiteral, BooleanLiteral},
+    Node,
+};
 use std::fmt::{Display, Formatter, Result};
 
 pub mod identifier;
@@ -41,6 +44,8 @@ pub enum Expression {
     PrefixExpression(PrefixExpression),
     /// An infix expression (e.g., `5 + 3`, `x == y`)
     InfixExpression(InfixExpression),
+    /// A boolean literal expression (e.g., `true`, `false`)
+    BooleanLiteral(BooleanLiteral),
 }
 
 impl Node for Expression {
@@ -50,6 +55,7 @@ impl Node for Expression {
             Expression::IntegerLiteral(il) => il.token_literal(),
             Expression::PrefixExpression(pe) => pe.token_literal(),
             Expression::InfixExpression(ie) => ie.token_literal(),
+            Expression::BooleanLiteral(bl) => bl.token_literal(),
         }
     }
 }
@@ -64,6 +70,7 @@ impl Display for Expression {
             Expression::IntegerLiteral(il) => write!(f, "{}", il),
             Expression::PrefixExpression(pe) => write!(f, "{}", pe),
             Expression::InfixExpression(ie) => write!(f, "{}", ie),
+            Expression::BooleanLiteral(bl) => write!(f, "{}", bl),
         }
     }
 }

@@ -9,7 +9,7 @@ pub mod integer;
 pub use boolean::BooleanLiteral;
 pub use integer::IntegerLiteral;
 
-use crate::{expression::Identifier, Node};
+use crate::{expressions::Identifier, Node};
 use lexer::token::{Token, TokenType};
 use std::fmt::{Display, Formatter, Result};
 
@@ -36,11 +36,8 @@ pub enum Literal {
     Integer(IntegerLiteral),
     /// An identifier literal (e.g., `x`, `foobar`)
     Identifier(Identifier),
+    /// A boolean literal (e.g., `true`, `false`)
     Boolean(BooleanLiteral),
-    // Future variants can be added here:
-    // String(StringLiteral),
-    // Boolean(BooleanLiteral),
-    // etc.
 }
 
 impl Node for Literal {

@@ -7,11 +7,11 @@
 //! trait objects and to render nodes for debugging and tests.
 //! Contributors should extend these definitions when adding new language forms.
 
-use crate::statement::Statement;
+use crate::statements::Statement;
 use std::fmt::{Display, Formatter, Result};
-pub mod expression;
+pub mod expressions;
 pub mod literals;
-pub mod statement;
+pub mod statements;
 
 pub trait Node {
     /// Returns the literal string representation of the token that

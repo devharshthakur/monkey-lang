@@ -3,7 +3,7 @@
 //! Represents a variable declaration: `let <identifier> = <expression>;`
 
 use crate::{
-    expression::{Expression, Identifier},
+    expressions::{Expression, Identifier},
     Node,
 };
 use lexer::token::Token;
