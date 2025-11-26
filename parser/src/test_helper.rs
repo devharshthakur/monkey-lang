@@ -20,6 +20,7 @@ use ast::{
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
+#[track_caller]
 pub fn test_integer_literal(exp: Expression, value: i64) -> bool {
     // Verifies that the expression is an IntegerLiteral
     let int_lit = match exp {
@@ -60,6 +61,7 @@ pub fn test_integer_literal(exp: Expression, value: i64) -> bool {
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
+#[track_caller]
 pub fn test_let_statement(stmt: &Statement, name: &str) -> bool {
     // Verify the statement's token literal is "let"
     assert_eq!(
@@ -109,6 +111,7 @@ pub fn test_let_statement(stmt: &Statement, name: &str) -> bool {
 /// # Returns
 /// - `None` if no errors are found
 /// - Panics with a summary of the error count if errors are present
+#[track_caller]
 pub fn check_parser_errors(p: &Parser) {
     let errors = p.errors();
 
@@ -136,6 +139,7 @@ pub fn check_parser_errors(p: &Parser) {
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
+#[track_caller]
 pub fn is_return_statement(stmt: &Statement) -> bool {
     // Verify the statement's token literal is "return"
     assert_eq!(
@@ -175,6 +179,7 @@ pub fn is_return_statement(stmt: &Statement) -> bool {
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
+#[track_caller]
 pub fn test_identifier(exp: Expression, value: &str) -> bool {
     // Verify that the expression is an Identifier expression
     let ident = match exp {
@@ -225,6 +230,7 @@ pub fn test_identifier(exp: Expression, value: &str) -> bool {
 /// test_literal_expression(expression, "foobar");
 /// test_literal_expression(expression, "foobar".to_string());
 /// ```
+#[track_caller]
 pub fn test_literal_expression<E: Into<Literal>>(exp: Expression, expected: E) -> bool {
     let expected_literal = expected.into();
     match expected_literal {
@@ -238,6 +244,7 @@ pub fn test_literal_expression<E: Into<Literal>>(exp: Expression, expected: E) -
     }
 }
 
+#[track_caller]
 pub fn test_boolean_literal(boolean_lit: &BooleanLiteral, value: bool) -> bool {
     // Verify that the boolean literal's value matches the expected value
     if boolean_lit.value != value {
@@ -247,6 +254,7 @@ pub fn test_boolean_literal(boolean_lit: &BooleanLiteral, value: bool) -> bool {
     }
 }
 
+#[track_caller]
 pub fn test_infix_expression<L: Into<Literal>, R: Into<Literal>>(
     exp: Expression,
     left: L,
