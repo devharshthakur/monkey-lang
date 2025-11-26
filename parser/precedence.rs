@@ -4,7 +4,7 @@
 //! to correctly parse expressions with proper operator precedence.
 //! Higher values indicate higher precedence.
 
-use lexer::token::TokenType;
+use crate::lexer::token::TokenType;
 
 /// Operator precedence levels for parsing expressions.
 /// Higher values indicate higher precedence.

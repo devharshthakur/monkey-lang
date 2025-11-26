@@ -1,5 +1,4 @@
-use cli::print_welcome;
-use repl::start;
+use monkey_lang::repl::{print_welcome, start};
 use std::io;
 
 fn main() -> io::Result<()> {
