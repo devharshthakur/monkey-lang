@@ -69,6 +69,7 @@ impl Parser {
         p.register_prefix_parse_fn(TokenType::MINUS, Parser::parse_prefix_expression);
         p.register_prefix_parse_fn(TokenType::TRUE, Parser::parse_boolean_literal);
         p.register_prefix_parse_fn(TokenType::FALSE, Parser::parse_boolean_literal);
+        p.register_prefix_parse_fn(TokenType::LPAREN, Parser::parse_grouped_expression);
         // Register Infix parse functions
         p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
@@ -477,6 +478,27 @@ impl Parser {
             operator,
             right: Box::new(right),
         }))
+    }
+    /// Parses a grouped expression (e.g., `(5 + 5)`).
+    ///
+    /// Expects the current token to be a left parenthesis. Parses the expression inside the parentheses.
+    /// Returns an Expression wrapped in an Expression variant.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing an `Expression` variant if parsing succeeds.
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if the right parenthesis is not found.
+    fn parse_grouped_expression(&mut self) -> Option<Expression> {
+        self.next_token();
+
+        let expr = self.parse_expression(Precedence::LOWEST as i32)?;
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+
+        Some(expr)
     }
 }
 
