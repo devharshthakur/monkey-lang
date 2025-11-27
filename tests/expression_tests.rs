@@ -46,6 +46,7 @@ fn test_parsing_integer_literal_expression() {
     let l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
+
     check_parser_errors(&p);
     assert_eq!(program.statements.len(), 1);
 
@@ -54,11 +55,13 @@ fn test_parsing_integer_literal_expression() {
         Statement::Expression(expr_stmt) => expr_stmt,
         _ => panic!("s is not an ExpressionStatement. got={:?}", stmt),
     };
+
     let expr = &expr_stmt.value;
     let int_lit = match expr {
         Expression::IntegerLiteral(int_lit) => int_lit,
         _ => panic!("expr is not an IntegerLiteral. got={:?}", expr),
     };
+
     assert_eq!(
         int_lit.value, 5,
         "int_lit.value is not 5. got={}",
@@ -215,5 +218,156 @@ fn test_parsing_infix_expression() {
             "right value mismatch. expected={}, got={}",
             expected_right_value, right_val
         );
+    }
+}
+
+// Testing if expressions : if (<condition>) <consequence>
+#[test]
+fn test_parsing_if_expression() {
+    let input = "if (x < y) { x }";
+    let l = Lexer::new(input.to_string());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+
+    check_parser_errors(&p);
+    assert_eq!(
+        program.statements.len(),
+        1,
+        "program.statements does not contain 1 statement. got={}",
+        program.statements.len()
+    );
+
+    let stmt = &program.statements[0];
+
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+    };
+
+    let if_expr = match &expr_stmt.value {
+        Expression::IfExpression(if_expr) => if_expr,
+        _ => panic!("expr is not an IfExpression. got={:?}", expr_stmt.value),
+    };
+
+    if !test_infix_expression_str(*if_expr.condition.clone(), "x", "<", "y") {
+        return;
+    }
+
+    let consequence_block_stmt = match &*if_expr.consequence {
+        Expression::BlockStatement(bs) => bs,
+        _ => panic!(
+            "consequence is not a BlockStatement. got={:?}",
+            if_expr.consequence
+        ),
+    };
+
+    if consequence_block_stmt.statements.len() != 1 {
+        panic!(
+            "consequence is not 1 statement. got={}",
+            consequence_block_stmt.statements.len()
+        );
+    }
+
+    let consequence_stmt = &consequence_block_stmt.statements[0];
+    let consequence_expr = match consequence_stmt {
+        Statement::Expression(expr_stmt) => &expr_stmt.value,
+        _ => panic!(
+            "consequence_stmt is not an ExpressionStatement. got={:?}",
+            consequence_stmt
+        ),
+    };
+
+    if !test_identifier(consequence_expr.clone(), "x") {
+        return;
+    }
+
+    if if_expr.alternative.is_some() {
+        panic!("alternative is not nil. got={:?}", if_expr.alternative);
+    }
+}
+
+// Testing if expressions : if (<condition>) <consequence> else <alternative>
+#[test]
+fn test_parsing_if_else_expression() {
+    let input = "if (x < y) { x } else { y }";
+    let l = Lexer::new(input.to_string());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+
+    check_parser_errors(&p);
+    assert_eq!(program.statements.len(), 1);
+    let stmt = &program.statements[0];
+    // Check if the statement is an ExpressionStatement
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+    };
+    // Check if the expression is an IfExpression
+    let if_expr = match &expr_stmt.value {
+        Expression::IfExpression(if_expr) => if_expr,
+        _ => panic!("expr is not an IfExpression. got={:?}", expr_stmt.value),
+    };
+    // Check if the condition is an infix expression
+    if !test_infix_expression_str(*if_expr.condition.clone(), "x", "<", "y") {
+        return;
+    }
+
+    // Extract consequence block statement
+    let consequence_block = match &*if_expr.consequence {
+        Expression::BlockStatement(bs) => bs,
+        _ => panic!(
+            "consequence is not a BlockStatement. got={:?}",
+            if_expr.consequence
+        ),
+    };
+
+    // Check if the consequence is 1 statement
+    if consequence_block.statements.len() != 1 {
+        panic!(
+            "consequence is not 1 statement. got={}",
+            consequence_block.statements.len()
+        );
+    }
+
+    // Check if the consequence statement is an ExpressionStatement
+    let consequence_stmt = &consequence_block.statements[0];
+    let consequence_expr = match consequence_stmt {
+        Statement::Expression(expr_stmt) => &expr_stmt.value,
+        _ => panic!(
+            "consequence_stmt is not an ExpressionStatement. got={:?}",
+            consequence_stmt
+        ),
+    };
+    // Check if the consequence statement is an Identifier
+    if !test_identifier(consequence_expr.clone(), "x") {
+        return;
+    }
+
+    // Extract alternative block statement
+    let alternative_block = match if_expr.alternative.as_deref() {
+        Some(Expression::BlockStatement(bs)) => bs,
+        Some(other) => panic!("alternative is not a BlockStatement. got={:?}", other),
+        None => panic!("alternative is None"),
+    };
+
+    // Check if the alternative is 1 statement
+    if alternative_block.statements.len() != 1 {
+        panic!(
+            "alternative is not 1 statement. got={}",
+            alternative_block.statements.len()
+        );
+    }
+
+    // Check if the alternative statement is an ExpressionStatement
+    let alternative_stmt = match &alternative_block.statements[0] {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!(
+            "alternative_stmt is not an ExpressionStatement. got={:?}",
+            alternative_block.statements[0]
+        ),
+    };
+    // Check if the alternative statement is an Identifier
+    if !test_identifier(alternative_stmt.value.clone(), "y") {
+        return;
     }
 }

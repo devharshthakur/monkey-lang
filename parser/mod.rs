@@ -14,7 +14,8 @@ pub mod test_helper;
 
 use crate::ast::{
     expression::{
-        BooleanLiteral, Expression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
+        BlockStatement, BooleanLiteral, Expression, Identifier, IfExpression, InfixExpression,
+        IntegerLiteral, PrefixExpression,
     },
     statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
     Program,
@@ -66,6 +67,9 @@ impl Parser {
         p.register_prefix_parse_fn(TokenType::TRUE, Parser::parse_boolean_literal);
         p.register_prefix_parse_fn(TokenType::FALSE, Parser::parse_boolean_literal);
         p.register_prefix_parse_fn(TokenType::LPAREN, Parser::parse_grouped_expression);
+        p.register_prefix_parse_fn(TokenType::IF, Parser::parse_if_expression);
+        p.register_prefix_parse_fn(TokenType::LBRACE, Parser::parse_block_statement);
+        p.register_prefix_parse_fn(TokenType::ELSE, Parser::parse_if_expression);
         // Register Infix parse functions
         p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
@@ -202,7 +206,7 @@ impl Parser {
         match self.curr_token.token_type {
             TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
-            _ => Some(Statement::Expression(self.parse_expression_statement())),
+            _ => self.parse_expression_statement().map(Statement::Expression),
         }
     }
 
@@ -299,17 +303,18 @@ impl Parser {
     ///
     /// # Returns
     /// An `ExpressionStatement` containing the parsed expression and its token information.
-    fn parse_expression_statement(&mut self) -> ExpressionStatement {
+    fn parse_expression_statement(&mut self) -> Option<ExpressionStatement> {
+        let expr = self.parse_expression(Precedence::LOWEST as i32)?;
         let stmt = ExpressionStatement {
             token: self.curr_token.clone(),
-            value: self.parse_expression(Precedence::LOWEST as i32).unwrap(),
+            value: expr,
         };
 
         // Optional semicolon for REPL
         if self.is_peek_token(TokenType::SEMICOLON) {
             self.next_token();
         }
-        stmt
+        Some(stmt)
     }
 
     /// Parses an expression starting from the current token position.
@@ -337,6 +342,7 @@ impl Parser {
             let left_exp = prefix_parse_fn(self)?;
             left_exp
         } else {
+            self.no_prefix_parse_function_error(token_type);
             return None;
         };
 
@@ -496,5 +502,80 @@ impl Parser {
         }
 
         Some(expr)
+    }
+    /// Parses an if expression (e.g., `if (<condition>) <consequence> else <alternative>`).
+    ///
+    /// Expects the current token to be an if keyword. Parses the condition, consequence, and alternative.
+    /// Returns an IfExpression wrapped in an Expression variant.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing an `IfExpression` variant if parsing succeeds.
+    fn parse_if_expression(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+
+        if !self.expect_peek(TokenType::LPAREN) {
+            return None;
+        }
+        // Advance to the next token to point to the condition and parse it with the lowest precedence
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST as i32)?;
+        // Expects the next token to be a right parenthesis
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+        // Expects the next token to be a left brace
+        if !self.expect_peek(TokenType::LBRACE) {
+            return None;
+        }
+        // Parse the consequence block statement and returns a BlockStatement
+        let consequence = self.parse_block_statement()?;
+        // If the next token is an else keyword, parse the alternative block statement
+        let alternative = if self.is_peek_token(TokenType::ELSE) {
+            self.next_token();
+
+            if !self.expect_peek(TokenType::LBRACE) {
+                return None;
+            }
+            // Parse the alternative block statement and returns a BlockStatement
+            let alternative = self.parse_block_statement()?;
+            Some(Box::new(alternative))
+        } else {
+            None
+        };
+        Some(Expression::IfExpression(IfExpression {
+            token,
+            condition: Box::new(condition),
+            consequence: Box::new(consequence),
+            alternative,
+        }))
+    }
+    /// Parses a block statement (e.g., `{ <statements> }`).
+    ///
+    /// Expects the current token to be a left brace. Parses the statements in the block until the right brace is found or EOF is reached.
+    /// Returns a BlockStatement containing the parsed statements and their token information.
+    ///
+    /// # Returns
+    /// An `Option<BlockStatement>` containing a `BlockStatement` variant if parsing succeeds.
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if the right brace is not found.
+    fn parse_block_statement(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let mut statements = Vec::new();
+        // Advance to the next token to point to the first statement in the block
+        self.next_token();
+        // Parse the statements in the block until the right brace is found or EOF is reached
+        while !self.is_peek_token(TokenType::RBRACE) && !self.is_peek_token(TokenType::EOF) {
+            let stmt = self.parse_statement()?;
+            statements.push(stmt);
+            self.next_token();
+        }
+        if !self.expect_peek(TokenType::RBRACE) {
+            return None;
+        }
+        Some(Expression::BlockStatement(BlockStatement {
+            token,
+            statements,
+        }))
     }
 }

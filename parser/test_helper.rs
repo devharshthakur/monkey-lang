@@ -269,6 +269,20 @@ pub fn test_infix_expression(exp: Expression, left: i64, operator: &str, right: 
     true
 }
 
+/// Helper function to test an infix expression with string values.
+///
+/// This function validates that an expression is an `InfixExpression` expression and that
+/// its left and right expressions are `Identifier` expressions and that the operator matches the expected operator.
+///
+/// # Parameters
+/// - `exp`: The expression to test
+/// - `left`: The expected left value of the identifier
+/// - `operator`: The expected operator
+/// - `right`: The expected right value of the identifier
+///
+/// # Returns
+/// - `true` if all assertions pass
+/// - Panics if any assertion fails (standard Rust test behavior)
 #[track_caller]
 pub fn test_infix_expression_str(exp: Expression, left: &str, operator: &str, right: &str) -> bool {
     let infix_expr = match exp {

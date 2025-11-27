@@ -3,7 +3,7 @@
 //! Expressions represent values and computations that evaluate to a value.
 //! All expression types are consolidated in this module.
 
-use crate::ast::Node;
+use crate::ast::{Node, Statement};
 use crate::lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 
@@ -26,6 +26,7 @@ pub struct IntegerLiteral {
 }
 
 /// Represents a boolean literal expression in the Monkey language AST.
+/// Boolean literal: true, false
 #[derive(Debug, Clone)]
 pub struct BooleanLiteral {
     pub token: Token,
@@ -41,6 +42,7 @@ pub struct PrefixExpression {
 }
 
 /// Represents an infix expression (e.g., `5 + 3`, `x == y`).
+/// Infix expression: <left> <operator> <right>
 #[derive(Debug, Clone)]
 pub struct InfixExpression {
     pub token: Token,
@@ -49,6 +51,23 @@ pub struct InfixExpression {
     pub right: Box<Expression>,
 }
 
+/// Represents an if expression in the Monkey language AST. Every if expression has a condition, a consequence, and an optional alternative.
+/// if expression: if (<condition>) <consequence> else <alternative>
+#[derive(Debug, Clone)]
+pub struct IfExpression {
+    pub token: Token,
+    pub condition: Box<Expression>,
+    pub consequence: Box<Expression>,
+    pub alternative: Option<Box<Expression>>, // optional ie. else block statement is optional
+}
+
+/// Represents a block statement in the Monkey language AST. A block statement is a list of statements enclosed in curly braces.
+/// block statement: { <statements> }
+#[derive(Debug, Clone)]
+pub struct BlockStatement {
+    pub token: Token,
+    pub statements: Vec<Statement>,
+}
 // ============ ENUM ============
 
 /// Enum representing all expression types in the AST.
@@ -64,6 +83,10 @@ pub enum Expression {
     PrefixExpression(PrefixExpression),
     /// An infix expression (e.g., `5 + 3`, `x == y`)
     InfixExpression(InfixExpression),
+    /// An if expression (e.g., `if (x < y) { x } else { y }`)
+    IfExpression(IfExpression),
+    /// A block statement (e.g., `{ <statements> }`)
+    BlockStatement(BlockStatement),
 }
 
 // ============ TRAIT IMPLEMENTATIONS ============
@@ -135,7 +158,9 @@ impl Node for Expression {
             Expression::IntegerLiteral(il) => il.token_literal(),
             Expression::BooleanLiteral(bl) => bl.token_literal(),
             Expression::PrefixExpression(pe) => pe.token_literal(),
-            Expression::InfixExpression(ie) => ie.token_literal(),
+            Expression::InfixExpression(infe) => infe.token_literal(),
+            Expression::IfExpression(ife) => ife.token_literal(),
+            Expression::BlockStatement(bs) => bs.token_literal(),
         }
     }
 }
@@ -148,7 +173,44 @@ impl Display for Expression {
             Expression::BooleanLiteral(bl) => write!(f, "{}", bl),
             Expression::PrefixExpression(pe) => write!(f, "{}", pe),
             Expression::InfixExpression(ie) => write!(f, "{}", ie),
+            Expression::IfExpression(ife) => write!(f, "{}", ife),
+            Expression::BlockStatement(bs) => write!(f, "{}", bs),
         }
+    }
+}
+
+impl Node for IfExpression {
+    fn token_literal(&self) -> &str {
+        &self.token.literal
+    }
+}
+
+impl Display for BlockStatement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{{")?;
+        for statement in &self.statements {
+            write!(f, "{}", statement)?;
+        }
+        write!(f, "}}")?;
+        Ok(())
+    }
+}
+
+impl Node for BlockStatement {
+    fn token_literal(&self) -> &str {
+        &self.token.literal
+    }
+}
+
+impl Display for IfExpression {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "if")?;
+        write!(f, "{}", self.condition)?;
+        write!(f, "{}", self.consequence)?;
+        if let Some(alternative) = self.alternative.as_ref() {
+            write!(f, "else {}", alternative)?;
+        }
+        Ok(())
     }
 }
 
