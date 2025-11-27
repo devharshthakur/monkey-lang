@@ -10,25 +10,22 @@
 //! - Reports user-friendly errors via the `errors` vector.
 
 mod precedence;
-mod test_helper;
+pub mod test_helper;
 
-use crate::precedence::Precedence;
-use ast::{
-    expressions::{infix, Expression, Identifier, PrefixExpression},
-    literals::{integer::IntegerLiteral, BooleanLiteral},
-    statements::{
-        expr::ExpressionStatement, let_::LetStatement, return_::ReturnStatement, Statement,
+use crate::ast::{
+    expression::{
+        BlockStatement, BooleanLiteral, Expression, Identifier, IfExpression, InfixExpression,
+        IntegerLiteral, PrefixExpression,
     },
+    statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
     Program,
 };
-use lexer::{
+use crate::lexer::{
     token::{Token, TokenType},
     Lexer,
 };
+use precedence::Precedence;
 use std::collections::HashMap;
-use test_helper::{
-    check_parser_errors, is_return_statement, test_integer_literal, test_let_statement,
-};
 
 /// A parser that converts tokens from a lexer into an Abstract Syntax Tree (AST).
 ///
@@ -70,6 +67,9 @@ impl Parser {
         p.register_prefix_parse_fn(TokenType::TRUE, Parser::parse_boolean_literal);
         p.register_prefix_parse_fn(TokenType::FALSE, Parser::parse_boolean_literal);
         p.register_prefix_parse_fn(TokenType::LPAREN, Parser::parse_grouped_expression);
+        p.register_prefix_parse_fn(TokenType::IF, Parser::parse_if_expression);
+        p.register_prefix_parse_fn(TokenType::LBRACE, Parser::parse_block_statement);
+        p.register_prefix_parse_fn(TokenType::ELSE, Parser::parse_if_expression);
         // Register Infix parse functions
         p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
@@ -206,7 +206,7 @@ impl Parser {
         match self.curr_token.token_type {
             TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
             TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
-            _ => Some(Statement::Expression(self.parse_expression_statement())),
+            _ => self.parse_expression_statement().map(Statement::Expression),
         }
     }
 
@@ -303,17 +303,18 @@ impl Parser {
     ///
     /// # Returns
     /// An `ExpressionStatement` containing the parsed expression and its token information.
-    fn parse_expression_statement(&mut self) -> ExpressionStatement {
+    fn parse_expression_statement(&mut self) -> Option<ExpressionStatement> {
+        let expr = self.parse_expression(Precedence::LOWEST as i32)?;
         let stmt = ExpressionStatement {
             token: self.curr_token.clone(),
-            value: self.parse_expression(Precedence::LOWEST as i32).unwrap(),
+            value: expr,
         };
 
         // Optional semicolon for REPL
         if self.is_peek_token(TokenType::SEMICOLON) {
             self.next_token();
         }
-        stmt
+        Some(stmt)
     }
 
     /// Parses an expression starting from the current token position.
@@ -341,6 +342,7 @@ impl Parser {
             let left_exp = prefix_parse_fn(self)?;
             left_exp
         } else {
+            self.no_prefix_parse_function_error(token_type);
             return None;
         };
 
@@ -472,7 +474,7 @@ impl Parser {
 
         // Parse the right-hand side expression with the precedence level and returns an Expression
         let right = self.parse_expression(precedence)?;
-        Some(Expression::InfixExpression(infix::InfixExpression {
+        Some(Expression::InfixExpression(InfixExpression {
             token,
             left: Box::new(left),
             operator,
@@ -490,6 +492,7 @@ impl Parser {
     /// # Errors
     /// Adds an error to the parser's error list if the right parenthesis is not found.
     fn parse_grouped_expression(&mut self) -> Option<Expression> {
+        // Expects the current token to be a left parenthesis. skips it and advances the token
         self.next_token();
 
         let expr = self.parse_expression(Precedence::LOWEST as i32)?;
@@ -500,498 +503,79 @@ impl Parser {
 
         Some(expr)
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ast::Node;
-
-    /// Tests parsing of multiple let statements.
+    /// Parses an if expression (e.g., `if (<condition>) <consequence> else <alternative>`).
     ///
-    /// This test verifies that the parser correctly:
-    /// 1. Parses multiple let statements from a single input string
-    /// 2. Creates the correct number of statements in the AST
-    /// 3. Each statement is correctly identified as a LetStatement
-    /// 4. Each statement's identifier name matches the expected value
+    /// Expects the current token to be an if keyword. Parses the condition, consequence, and alternative.
+    /// Returns an IfExpression wrapped in an Expression variant.
     ///
-    /// The test follows the same structure as the Go implementation from
-    /// "Writing an Interpreter in Go" by Thorsten Ball, ensuring compatibility
-    /// with the reference implementation.
-    ///
-    /// # Test Structure
-    /// - Creates a lexer and parser from input containing 3 let statements
-    /// - Parses the program and verifies statement count
-    /// - Iterates through each statement and validates its properties
-    #[test]
-    fn test_parsing_let_statements() {
-        // Input containing three let statements with different identifiers
-        let input = r#"
-let x = 5;
-let y = 10;
-let foobar = 838383;
-"#
-        .to_string();
+    /// # Returns
+    /// An `Option<Expression>` containing an `IfExpression` variant if parsing succeeds.
+    fn parse_if_expression(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
 
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-
-        // Parse the program into an AST
-        let program = p.parse_program();
-
-        // Check for any parser errors
-        check_parser_errors(&p);
-
-        // Verify that parsing succeeded (program is not empty)
-        assert!(
-            !program.statements.is_empty(),
-            "ParseProgram() returned empty program"
-        );
-        // Verify that exactly 3 statements were parsed
-        assert_eq!(
-            program.statements.len(),
-            3,
-            "program.statements does not contain 3 statements. got={}",
-            program.statements.len()
-        );
-
-        // Test each statement to ensure it's a LetStatement with the correct identifier
-        let tests = vec!["x", "y", "foobar"];
-        for (i, expected_identifier) in tests.iter().enumerate() {
-            let stmt = &program.statements[i];
-            assert!(
-                test_let_statement(stmt, expected_identifier),
-                "test_let_statement failed for statement {}",
-                i
-            );
+        if !self.expect_peek(TokenType::LPAREN) {
+            return None;
         }
-    }
-
-    /// Tests parsing of multiple return statements.
-    ///
-    /// This test verifies that the parser correctly:
-    /// 1. Parses multiple return statements from a single input string
-    /// 2. Creates the correct number of statements in the AST
-    /// 3. Each statement is correctly identified as a ReturnStatement
-    /// 4. Each statement's token literal matches "return"
-    ///
-    /// The test follows the same structure as the Go implementation from
-    /// "Writing an Interpreter in Go" by Thorsten Ball, ensuring compatibility
-    /// with the reference implementation.
-    ///
-    /// # Test Structure
-    /// - Creates a lexer and parser from input containing 3 return statements
-    /// - Parses the program and verifies statement count
-    /// - Iterates through each statement and validates its properties
-    #[test]
-    fn test_parsing_return_statements() {
-        let input = r#"
-return 5;
-return 10;
-return 993322;
-"#
-        .to_string();
-
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-
-        // Parse the program into an AST
-        let program = p.parse_program();
-
-        // Check for any parser errors
-        check_parser_errors(&p);
-
-        // Verify that parsing succeeded (program is not empty)
-        assert!(
-            !program.statements.is_empty(),
-            "ParseProgram() returned empty program"
-        );
-        // Verify that exactly 3 statements were parsed
-        assert_eq!(
-            program.statements.len(),
-            3,
-            "program.statements does not contain 3 statements. got={}",
-            program.statements.len()
-        );
-
-        // Test each statement to ensure it's a ReturnStatement
-        for (i, stmt) in program.statements.iter().enumerate() {
-            assert!(
-                is_return_statement(stmt),
-                "is_return_statement failed for statement {}",
-                i
-            );
+        // Advance to the next token to point to the condition and parse it with the lowest precedence
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST as i32)?;
+        // Expects the next token to be a right parenthesis
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
         }
-    }
+        // Expects the next token to be a left brace
+        if !self.expect_peek(TokenType::LBRACE) {
+            return None;
+        }
+        // Parse the consequence block statement and returns a BlockStatement
+        let consequence = self.parse_block_statement()?;
+        // If the next token is an else keyword, parse the alternative block statement
+        let alternative = if self.is_peek_token(TokenType::ELSE) {
+            self.next_token();
 
-    /// Tests parsing a single return statement.
-    ///
-    /// This test verifies that a single return statement is correctly parsed
-    /// and identified as a ReturnStatement in the AST.
-    #[test]
-    fn test_parsing_return_statement() {
-        let input = "return 5;".to_string();
-
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-        let program = p.parse_program();
-
-        check_parser_errors(&p);
-
-        assert_eq!(
-            program.statements.len(),
-            1,
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-
-        let stmt = &program.statements[0];
-        assert!(
-            is_return_statement(stmt),
-            "statement is not a ReturnStatement"
-        );
-    }
-
-    /// Tests parsing of a single identifier expression.
-    ///
-    /// This test verifies that a single identifier expression is correctly parsed
-    /// and identified as an IdentifierExpression in the AST.
-    #[test]
-    fn test_parsing_identifier_expression() {
-        // Creates a lexer and parser from input containing a single identifier expression
-        let input = "foobar;".to_string();
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-
-        // Parses the program and verifies statement count
-        let program = p.parse_program();
-        check_parser_errors(&p);
-        assert_eq!(program.statements.len(), 1);
-
-        // Iterates through each statement and validates its properties
-        let stmt = &program.statements[0];
-
-        // Verifies that the statement is an ExpressionStatement
-        let expr_stmt = match stmt {
-            Statement::Expression(expr_stmt) => expr_stmt,
-            _ => panic!("s is not an ExpressionStatement. got={:?}", stmt),
-        };
-
-        // Verifies that the expression is an Identifier
-        let expr = &expr_stmt.value;
-        let ident = match expr {
-            Expression::Identifier(ident) => ident,
-            _ => panic!("expr is not an Identifier. got={:?}", expr),
-        };
-
-        // Verifies that the identifier's value matches the expected value
-        assert_eq!(
-            ident.value, "foobar",
-            "ident.value is not foobar. got={}",
-            ident.value
-        );
-        // Verifies that the identifier's token literal matches the expected value
-        assert_eq!(
-            ident.token_literal(),
-            "foobar",
-            "ident.token_literal() is not foobar. got={}",
-            ident.token_literal()
-        );
-    }
-
-    /// Tests parsing of a single integer literal expression.
-    ///
-    /// This test verifies that a single integer literal expression is correctly parsed
-    /// and identified as an IntegerLiteralExpression in the AST.
-    #[test]
-    fn test_parsing_integer_literal_expression() {
-        let input = "5;".to_string();
-        // Creates a lexer and parser from input
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-        let program = p.parse_program();
-        // Checks for any parser errors
-        check_parser_errors(&p);
-        // Verifies that the program has exactly 1 statement
-        assert_eq!(program.statements.len(), 1);
-        // Iterates through each statement and validates its properties
-        let stmt = &program.statements[0];
-        // Verifies that the statement is an ExpressionStatement
-        let expr_stmt = match stmt {
-            Statement::Expression(expr_stmt) => expr_stmt,
-            _ => panic!("s is not an ExpressionStatement. got={:?}", stmt),
-        };
-        let expr = &expr_stmt.value;
-        // Verifies that the expression is an IntegerLiteral
-        let int_lit = match expr {
-            Expression::IntegerLiteral(int_lit) => int_lit,
-            _ => panic!("expr is not an IntegerLiteral. got={:?}", expr),
-        };
-        // Verifies that the integer literal's value matches the expected value
-        assert_eq!(
-            int_lit.value, 5,
-            "int_lit.value is not 5. got={}",
-            int_lit.value
-        );
-        // Verifies that the integer literal's token literal matches the expected value
-        assert_eq!(
-            int_lit.token_literal(),
-            "5",
-            "int_lit.token_literal() is not 5. got={}",
-            int_lit.token_literal()
-        );
-    }
-
-    /// Tests parsing of prefix expressions (e.g., `!5`, `-15`, `!foobar`, `-foobar`).
-    ///
-    /// This test verifies that prefix expressions with BANG (!) and MINUS (-) operators
-    /// are correctly parsed and identified as PrefixExpression in the AST. It tests
-    /// both operators with integer literals and identifiers.
-    #[test]
-    fn test_parsing_prefix_expressions() {
-        // Test cases: (input, expected_operator, expected_right_value)
-        let prefix_tests: Vec<(&str, &str, &str)> = vec![
-            ("!5;", "!", "5"),
-            ("-15;", "-", "15"),
-            ("!foobar;", "!", "foobar"),
-            ("-foobar;", "-", "foobar"),
-        ];
-
-        for (input, expected_operator, expected_right_value) in prefix_tests {
-            // Creates a lexer and parser from input containing a prefix expression
-            let l = Lexer::new(input.to_string());
-            let mut p = Parser::new(l);
-
-            // Parses the program
-            let program = p.parse_program();
-
-            // Checks for any parser errors
-            check_parser_errors(&p);
-
-            // Verifies that the program has exactly 1 statement
-            assert_eq!(
-                program.statements.len(),
-                1,
-                "program.statements does not contain 1 statement. got={}",
-                program.statements.len()
-            );
-
-            // Extracts the first statement from the program
-            let stmt = &program.statements[0];
-
-            // Verifies that the statement is an ExpressionStatement
-            let expr_stmt = match stmt {
-                Statement::Expression(expr_stmt) => expr_stmt,
-                _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
-            };
-
-            // Verifies that the expression is a PrefixExpression
-            let prefix_expr = match &expr_stmt.value {
-                Expression::PrefixExpression(pe) => pe,
-                _ => panic!("expr is not a PrefixExpression. got={:?}", expr_stmt.value),
-            };
-
-            // Verifies that the prefix operator matches the expected operator
-            assert_eq!(
-                prefix_expr.operator, expected_operator,
-                "prefix_expr.operator is not '{}'. got={}",
-                expected_operator, prefix_expr.operator
-            );
-
-            // Tests the right-hand expression based on its type
-            match &*prefix_expr.right {
-                Expression::IntegerLiteral(int_lit) => {
-                    // Verifies that the integer literal's value matches the expected value
-                    let expected_int = expected_right_value.parse::<i64>().unwrap();
-                    assert_eq!(
-                        int_lit.value, expected_int,
-                        "int_lit.value is not {}. got={}",
-                        expected_int, int_lit.value
-                    );
-                    // Verifies that the integer literal's token literal matches the expected value
-                    assert_eq!(
-                        int_lit.token_literal(),
-                        expected_right_value,
-                        "int_lit.token_literal() is not '{}'. got='{}'",
-                        expected_right_value,
-                        int_lit.token_literal()
-                    );
-                }
-                Expression::Identifier(ident) => {
-                    // Verifies that the identifier's value matches the expected value
-                    assert_eq!(
-                        ident.value, expected_right_value,
-                        "ident.value is not '{}'. got='{}'",
-                        expected_right_value, ident.value
-                    );
-                    // Verifies that the identifier's token literal matches the expected value
-                    assert_eq!(
-                        ident.token_literal(),
-                        expected_right_value,
-                        "ident.token_literal() is not '{}'. got='{}'",
-                        expected_right_value,
-                        ident.token_literal()
-                    );
-                }
-                _ => panic!(
-                    "prefix_expr.right is not IntegerLiteral or Identifier. got={:?}",
-                    prefix_expr.right
-                ),
+            if !self.expect_peek(TokenType::LBRACE) {
+                return None;
             }
-        }
+            // Parse the alternative block statement and returns a BlockStatement
+            let alternative = self.parse_block_statement()?;
+            Some(Box::new(alternative))
+        } else {
+            None
+        };
+        Some(Expression::IfExpression(IfExpression {
+            token,
+            condition: Box::new(condition),
+            consequence: Box::new(consequence),
+            alternative,
+        }))
     }
-
-    /// Tests parsing of infix expressions (e.g., `5 + 5`, `5 - 5`, `5 * 5`, `5 / 5`, `5 > 5`, `5 < 5`, `5 == 5`, `5 != 5`).
+    /// Parses a block statement (e.g., `{ <statements> }`).
     ///
-    /// This test verifies that infix expressions with the operators +, -, *, /, >, <, ==, != are correctly parsed
-    /// and identified as InfixExpression in the AST.
-    ///
-    /// # Parameters
-    /// - `input`: The input string containing the infix expression
-    /// - `left_value`: The expected value of the left operand
-    /// - `operator`: The infix operator
-    /// - `right_value`: The expected value of the right operand
+    /// Expects the current token to be a left brace. Parses the statements in the block until the right brace is found or EOF is reached.
+    /// Returns a BlockStatement containing the parsed statements and their token information.
     ///
     /// # Returns
-    /// - `true` if all assertions pass
-    /// - Panics if any assertion fails.
-    #[test]
-    fn test_parsing_infix_expression() {
-        let infix_tests: Vec<(&str, i32, &str, i32)> = vec![
-            ("5 + 5;", 5, "+", 5),
-            ("5 - 5;", 5, "-", 5),
-            ("5 * 5;", 5, "*", 5),
-            ("5 / 5;", 5, "/", 5),
-            ("5 > 5;", 5, ">", 5),
-            ("5 < 5;", 5, "<", 5),
-            ("5 == 5;", 5, "==", 5),
-            ("5 != 5;", 5, "!=", 5),
-        ];
-
-        for (input, expected_left_value, expected_operator, expected_right_value) in infix_tests {
-            // Creates a lexer and parser from input
-            let l = Lexer::new(input.to_string());
-            let mut p = Parser::new(l);
-            let program = p.parse_program();
-
-            // Checks for any parser errors and verifies that the program has exactly 1 statement
-            check_parser_errors(&p);
-            assert_eq!(program.statements.len(), 1);
-
-            // Verify that the statement is an ExpressionStatement
-            let stmt = &program.statements[0];
-            let expr_stmt = match stmt {
-                Statement::Expression(expr_stmt) => expr_stmt,
-                _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
-            };
-
-            // Verify that the expression is an InfixExpression
-            let infix_expr = match &expr_stmt.value {
-                Expression::InfixExpression(ie) => ie,
-                _ => panic!("expr is not an InfixExpression. got={:?}", expr_stmt.value),
-            };
-
-            // Verify that the left expression is an IntegerLiteral
-            let left_val = match &*infix_expr.left {
-                Expression::IntegerLiteral(int_lit) => int_lit.value as i32,
-                _ => panic!(
-                    "infix_expr.left is not the expected value. got={:?}",
-                    infix_expr.left
-                ),
-            };
-            // Verify that the left value matches the expected value
-            assert_eq!(
-                left_val, expected_left_value,
-                "left value mismatch. expected={}, got={}",
-                expected_left_value, left_val
-            );
-            // Verify that the operator matches the expected operator
-            assert_eq!(
-                infix_expr.operator, expected_operator,
-                "operator mismatch. expected='{}', got='{}'",
-                expected_operator, infix_expr.operator
-            );
-
-            // Verify that the right expression's value matches the expected value and
-            let right_val = match &*infix_expr.right {
-                Expression::IntegerLiteral(int_lit) => int_lit.value as i32,
-                _ => panic!(
-                    "infix_expr.right is not the expected value. got={:?}",
-                    infix_expr.right
-                ),
-            };
-            assert_eq!(
-                right_val, expected_right_value,
-                "right value mismatch. expected={}, got={}",
-                expected_right_value, right_val
-            );
+    /// An `Option<BlockStatement>` containing a `BlockStatement` variant if parsing succeeds.
+    ///
+    /// # Errors
+    /// Adds an error to the parser's error list if the right brace is not found.
+    fn parse_block_statement(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let mut statements = Vec::new();
+        // Advance to the next token to point to the first statement in the block
+        self.next_token();
+        // Parse the statements in the block until the right brace is found or EOF is reached
+        while !self.is_peek_token(TokenType::RBRACE) && !self.is_peek_token(TokenType::EOF) {
+            let stmt = self.parse_statement()?;
+            statements.push(stmt);
+            self.next_token();
         }
-    }
-
-    /// Tests operator precedence parsing to ensure expressions are parsed correctly
-    /// according to operator precedence rules.
-    ///
-    /// This test verifies that:
-    /// 1. Prefix operators have higher precedence than infix operators
-    /// 2. Multiplication/division have higher precedence than addition/subtraction
-    /// 3. Comparison operators have lower precedence than arithmetic operators
-    /// 4. Equality operators have lower precedence than comparison operators
-    /// 5. Left-associative operators are grouped correctly
-    /// 6. Complex expressions with multiple precedence levels are parsed correctly
-    /// 7. Boolean operators are parsed correctly
-    ///
-    /// # Parameters
-    /// - `input`: The input string containing the expression
-    /// - `expected`: The expected string containing the parsed expression
-    ///
-    /// # Returns
-    /// - `true` if all assertions pass
-    /// - Panics if any assertion fails.
-    #[test]
-    fn test_operator_precedence_parsing() {
-        let tests: Vec<(&str, &str)> = vec![
-            // Prefix operators with infix operators
-            ("-a * b;", "((-a) * b)"),
-            ("!-a;", "(!(-a))"),
-            // Left-associative operators
-            ("a + b + c;", "((a + b) + c)"),
-            ("a + b - c;", "((a + b) - c)"),
-            ("a * b * c;", "((a * b) * c)"),
-            ("a * b / c;", "((a * b) / c)"),
-            // Precedence: multiplication/division higher than addition/subtraction
-            ("a + b / c;", "(a + (b / c))"),
-            ("a + b * c + d / e - f;", "(((a + (b * c)) + (d / e)) - f)"),
-            // Multiple statements
-            ("3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"),
-            // Comparison operators
-            ("5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))"),
-            ("5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))"),
-            // Mixed precedence
-            (
-                "3 + 4 * 5 == 3 * 1 + 4 * 5;",
-                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-            ),
-            // Boolean operators
-            ("true;", "true"),
-            ("false;", "false"),
-            ("3 > 5 == false;", "((3 > 5) == false)"),
-            ("3 < 5 == true;", "((3 < 5) == true)"),
-            ("!(true == true);", "(!(true == true))"),
-        ];
-
-        for (input, expected) in tests {
-            let l = Lexer::new(input.to_string());
-            let mut p = Parser::new(l);
-            let program = p.parse_program();
-
-            check_parser_errors(&p);
-
-            let actual = format!("{}", program);
-            assert_eq!(
-                actual, expected,
-                "expected={:?}, got={:?}",
-                expected, actual
-            );
+        if !self.expect_peek(TokenType::RBRACE) {
+            return None;
         }
+        Some(Expression::BlockStatement(BlockStatement {
+            token,
+            statements,
+        }))
     }
 }

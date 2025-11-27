@@ -1,6 +1,6 @@
-use crate::token::{lookup_identifier, Token, TokenType};
-
 pub mod token;
+
+use token::{lookup_identifier, Token, TokenType};
 
 pub struct Lexer {
     input: String,
@@ -197,7 +197,7 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::TokenType;
+    use token::TokenType;
 
     #[test]
     fn test_next_token() {

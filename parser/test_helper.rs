@@ -1,10 +1,9 @@
 //! This module contains helper functions for testing the parser.
 //! It makes easier to test the parser.
-use crate::Parser;
-use ast::{
-    expressions::Expression,
-    literals::{BooleanLiteral, Literal},
-    statements::Statement,
+use super::Parser;
+use crate::ast::{
+    expression::{BooleanLiteral, Expression},
+    statement::Statement,
     Node,
 };
 
@@ -210,37 +209,30 @@ pub fn test_identifier(exp: Expression, value: &str) -> bool {
 ///
 /// This function validates that an expression matches the expected literal type
 /// and value. It dispatches to the appropriate test function based on the
-/// expected literal type (integer or identifier).
+/// expected literal type (integer, identifier, or boolean).
 ///
 /// # Parameters
 /// - `exp`: The expression to test
-/// - `expected`: The expected literal value (can be i32, i64, &str, or String)
+/// - `expected`: The expected literal value (can be i64, &str, or bool)
 ///
 /// # Returns
 /// - `true` if all assertions pass
 /// - Panics if any assertion fails (standard Rust test behavior)
-///
-/// # Example
-/// ```ignore
-/// // Test integer literal (i32 or i64)
-/// test_literal_expression(expression, 5);
-/// test_literal_expression(expression, 5i64);
-///
-/// // Test identifier (&str or String)
-/// test_literal_expression(expression, "foobar");
-/// test_literal_expression(expression, "foobar".to_string());
-/// ```
 #[track_caller]
-pub fn test_literal_expression<E: Into<Literal>>(exp: Expression, expected: E) -> bool {
-    let expected_literal = expected.into();
-    match expected_literal {
-        Literal::Integer(il) => test_integer_literal(exp, il.value),
-        Literal::Identifier(ident) => test_identifier(exp, &ident.value),
-        Literal::Boolean(bl) => test_boolean_literal(&bl, bl.value),
-        _ => panic!(
-            "expected literal type not handled. got={:?}",
-            expected_literal
-        ),
+pub fn test_literal_expression(exp: Expression, expected: i64) -> bool {
+    test_integer_literal(exp, expected)
+}
+
+#[track_caller]
+pub fn test_literal_expression_str(exp: Expression, expected: &str) -> bool {
+    test_identifier(exp, expected)
+}
+
+#[track_caller]
+pub fn test_literal_expression_bool(exp: Expression, expected: bool) -> bool {
+    match exp {
+        Expression::BooleanLiteral(bl) => test_boolean_literal(&bl, expected),
+        _ => panic!("exp is not a BooleanLiteral. got={:?}", exp),
     }
 }
 
@@ -255,12 +247,7 @@ pub fn test_boolean_literal(boolean_lit: &BooleanLiteral, value: bool) -> bool {
 }
 
 #[track_caller]
-pub fn test_infix_expression<L: Into<Literal>, R: Into<Literal>>(
-    exp: Expression,
-    left: L,
-    operator: &str,
-    right: R,
-) -> bool {
+pub fn test_infix_expression(exp: Expression, left: i64, operator: &str, right: i64) -> bool {
     let infix_expr = match exp {
         Expression::InfixExpression(infix_expr) => infix_expr,
         _ => panic!("exp is not an InfixExpression. got={:?}", exp),
@@ -282,20 +269,56 @@ pub fn test_infix_expression<L: Into<Literal>, R: Into<Literal>>(
     true
 }
 
+/// Helper function to test an infix expression with string values.
+///
+/// This function validates that an expression is an `InfixExpression` expression and that
+/// its left and right expressions are `Identifier` expressions and that the operator matches the expected operator.
+///
+/// # Parameters
+/// - `exp`: The expression to test
+/// - `left`: The expected left value of the identifier
+/// - `operator`: The expected operator
+/// - `right`: The expected right value of the identifier
+///
+/// # Returns
+/// - `true` if all assertions pass
+/// - Panics if any assertion fails (standard Rust test behavior)
+#[track_caller]
+pub fn test_infix_expression_str(exp: Expression, left: &str, operator: &str, right: &str) -> bool {
+    let infix_expr = match exp {
+        Expression::InfixExpression(infix_expr) => infix_expr,
+        _ => panic!("exp is not an InfixExpression. got={:?}", exp),
+    };
+
+    // Verify that the left expression matches the expected value
+    test_literal_expression_str(*infix_expr.left, left);
+
+    // Verify that the operator matches the expected operator
+    assert_eq!(
+        infix_expr.operator, operator,
+        "infix_expr.operator is not the expected operator. got={}",
+        infix_expr.operator
+    );
+
+    // Verify that the right expression matches the expected value
+    test_literal_expression_str(*infix_expr.right, right);
+
+    true
+}
+
 #[cfg(test)]
 mod tests {
-    use lexer::Lexer;
+    use crate::lexer::Lexer;
 
     use super::*;
 
     #[test]
     fn test_infix_expressions() {
-        let tests: Vec<(&str, Literal, &str, Literal)> = vec![
-            ("5 + 5;", 5.into(), "+", 5.into()),
-            ("5 - 5;", 5.into(), "-", 5.into()),
-            ("5 * 5;", 5.into(), "*", 5.into()),
-            ("5 / 5;", 5.into(), "/", 5.into()),
-            ("alice * bob;", "alice".into(), "*", "bob".into()),
+        let tests: Vec<(&str, i64, &str, i64)> = vec![
+            ("5 + 5;", 5, "+", 5),
+            ("5 - 5;", 5, "-", 5),
+            ("5 * 5;", 5, "*", 5),
+            ("5 / 5;", 5, "/", 5),
         ];
         for (input, left, operator, right) in tests {
             let l = Lexer::new(input.to_string());
@@ -312,6 +335,24 @@ mod tests {
             };
 
             test_infix_expression(expr_stmt.value.clone(), left, operator, right);
+        }
+
+        let str_tests: Vec<(&str, &str, &str, &str)> = vec![("alice * bob;", "alice", "*", "bob")];
+        for (input, left, operator, right) in str_tests {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+
+            check_parser_errors(&p);
+            assert_eq!(program.statements.len(), 1);
+
+            let stmt = &program.statements[0];
+            let expr_stmt = match stmt {
+                Statement::Expression(expr_stmt) => expr_stmt,
+                _ => panic!("stmt is not an ExpressionStatement"),
+            };
+
+            test_infix_expression_str(expr_stmt.value.clone(), left, operator, right);
         }
     }
 }

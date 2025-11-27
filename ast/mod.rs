@@ -1,17 +1,17 @@
 //! Abstract Syntax Tree (AST) types and traits for the Monkey language parser.
 //!
 //! This module defines the building blocks of the AST and their common
-//! behavior:
-//!
-//! It also provides blanket/utility implementations to enable cloning of boxed
-//! trait objects and to render nodes for debugging and tests.
-//! Contributors should extend these definitions when adding new language forms.
+//! behavior.
 
-use crate::statements::Statement;
 use std::fmt::{Display, Formatter, Result};
-pub mod expressions;
-pub mod literals;
-pub mod statements;
+
+pub mod expression;
+pub mod statement;
+
+pub use expression::{
+    BooleanLiteral, Expression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
+};
+pub use statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement};
 
 pub trait Node {
     /// Returns the literal string representation of the token that
