@@ -7,6 +7,29 @@ use crate::ast::{Node, Statement};
 use crate::lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};
 
+// ============ ENUM ============
+
+/// Enum representing all expression types in the AST.
+#[derive(Debug, Clone)]
+pub enum Expression {
+    /// An identifier expression (variable name, function name, etc.)
+    Identifier(Identifier),
+    /// An integer literal expression (e.g., `42`, `-10`)
+    IntegerLiteral(IntegerLiteral),
+    /// A boolean literal expression (e.g., `true`, `false`)
+    BooleanLiteral(BooleanLiteral),
+    /// A prefix expression (e.g., `!true`, `-5`)
+    PrefixExpression(PrefixExpression),
+    /// An infix expression (e.g., `5 + 3`, `x == y`)
+    InfixExpression(InfixExpression),
+    /// An if expression (e.g., `if (x < y) { x } else { y }`)
+    IfExpression(IfExpression),
+    /// A block statement (e.g., `{ <statements> }`)
+    BlockStatement(BlockStatement),
+    /// A function literal expression (e.g., `fn(x, y) { x + y }`)
+    FunctionLiteral(FunctionLiteral),
+}
+
 // ============ STRUCTS ============
 
 /// Represents an identifier expression in the Monkey language AST.
@@ -68,25 +91,14 @@ pub struct BlockStatement {
     pub token: Token,
     pub statements: Vec<Statement>,
 }
-// ============ ENUM ============
 
-/// Enum representing all expression types in the AST.
+/// Represents a function literal expression in the Monkey language AST.
+/// The format of a function literal is: fn(<parameters>) <body>
 #[derive(Debug, Clone)]
-pub enum Expression {
-    /// An identifier expression (variable name, function name, etc.)
-    Identifier(Identifier),
-    /// An integer literal expression (e.g., `42`, `-10`)
-    IntegerLiteral(IntegerLiteral),
-    /// A boolean literal expression (e.g., `true`, `false`)
-    BooleanLiteral(BooleanLiteral),
-    /// A prefix expression (e.g., `!true`, `-5`)
-    PrefixExpression(PrefixExpression),
-    /// An infix expression (e.g., `5 + 3`, `x == y`)
-    InfixExpression(InfixExpression),
-    /// An if expression (e.g., `if (x < y) { x } else { y }`)
-    IfExpression(IfExpression),
-    /// A block statement (e.g., `{ <statements> }`)
-    BlockStatement(BlockStatement),
+pub struct FunctionLiteral {
+    pub token: Token,
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
 }
 
 // ============ TRAIT IMPLEMENTATIONS ============
@@ -151,6 +163,25 @@ impl Display for InfixExpression {
     }
 }
 
+impl Node for FunctionLiteral {
+    fn token_literal(&self) -> &str {
+        &self.token.literal
+    }
+}
+
+impl Display for FunctionLiteral {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "fn(")?;
+        for (i, param) in self.parameters.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", param)?;
+        }
+        write!(f, ") {}", self.body)
+    }
+}
+
 impl Node for Expression {
     fn token_literal(&self) -> &str {
         match self {
@@ -161,6 +192,7 @@ impl Node for Expression {
             Expression::InfixExpression(infe) => infe.token_literal(),
             Expression::IfExpression(ife) => ife.token_literal(),
             Expression::BlockStatement(bs) => bs.token_literal(),
+            Expression::FunctionLiteral(fl) => fl.token_literal(),
         }
     }
 }
@@ -175,6 +207,7 @@ impl Display for Expression {
             Expression::InfixExpression(ie) => write!(f, "{}", ie),
             Expression::IfExpression(ife) => write!(f, "{}", ife),
             Expression::BlockStatement(bs) => write!(f, "{}", bs),
+            Expression::FunctionLiteral(fl) => write!(f, "{}", fl),
         }
     }
 }

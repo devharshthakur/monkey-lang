@@ -14,8 +14,8 @@ pub mod test_helper;
 
 use crate::ast::{
     expression::{
-        BlockStatement, BooleanLiteral, Expression, Identifier, IfExpression, InfixExpression,
-        IntegerLiteral, PrefixExpression,
+        BlockStatement, BooleanLiteral, Expression, FunctionLiteral, Identifier, IfExpression,
+        InfixExpression, IntegerLiteral, PrefixExpression,
     },
     statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
     Program,
@@ -70,6 +70,7 @@ impl Parser {
         p.register_prefix_parse_fn(TokenType::IF, Parser::parse_if_expression);
         p.register_prefix_parse_fn(TokenType::LBRACE, Parser::parse_block_statement);
         p.register_prefix_parse_fn(TokenType::ELSE, Parser::parse_if_expression);
+        p.register_prefix_parse_fn(TokenType::FUNCTION, Parser::parse_function_literal);
         // Register Infix parse functions
         p.register_infix_parse_fn(TokenType::PLUS, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::MINUS, Parser::parse_infix_expression);
@@ -562,13 +563,11 @@ impl Parser {
     fn parse_block_statement(&mut self) -> Option<Expression> {
         let token = self.curr_token.clone();
         let mut statements = Vec::new();
-        // Advance to the next token to point to the first statement in the block
-        self.next_token();
         // Parse the statements in the block until the right brace is found or EOF is reached
         while !self.is_peek_token(TokenType::RBRACE) && !self.is_peek_token(TokenType::EOF) {
+            self.next_token();
             let stmt = self.parse_statement()?;
             statements.push(stmt);
-            self.next_token();
         }
         if !self.expect_peek(TokenType::RBRACE) {
             return None;
@@ -577,5 +576,74 @@ impl Parser {
             token,
             statements,
         }))
+    }
+
+    /// Parses a function literal expression (e.g., `fn(<parameters>) <body>`).
+    ///
+    /// Expects the current token to be a function keyword. Parses the parameters and body.
+    /// Returns a FunctionLiteral wrapped in an Expression variant.
+    ///
+    /// # Returns
+    /// An `Option<Expression>` containing a `FunctionLiteral` variant if parsing succeeds.
+    fn parse_function_literal(&mut self) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        if !self.expect_peek(TokenType::LPAREN) {
+            return None;
+        }
+        let parameters = self.parse_function_parameters()?;
+        if !self.expect_peek(TokenType::LBRACE) {
+            return None;
+        }
+        let body = match self.parse_block_statement()? {
+            Expression::BlockStatement(block_stmt) => block_stmt,
+            _ => return None,
+        };
+        Some(Expression::FunctionLiteral(FunctionLiteral {
+            token,
+            parameters,
+            body,
+        }))
+    }
+
+    /// Parses the function parameters (e.g., `x, y`).
+    ///
+    /// Expects the current token to be a left parenthesis. Parses the parameters until the right parenthesis is found.
+    /// Returns a Vec<Identifier> containing the parsed parameters.
+    ///
+    /// # Returns
+    /// An `Option<Vec<Identifier>>` containing a `Vec<Identifier>` variant if parsing succeeds.
+    fn parse_function_parameters(&mut self) -> Option<Vec<Identifier>> {
+        let mut parameters = Vec::new();
+        if self.is_peek_token(TokenType::RPAREN) {
+            self.next_token();
+            return Some(parameters);
+        }
+        // Advance to the next token to point to the first parameter
+        self.next_token();
+
+        // Parse first parameter
+        let first_param = match self.parse_identifier()? {
+            Expression::Identifier(ident) => ident,
+            _ => return None,
+        };
+        parameters.push(first_param);
+
+        // Parse remaining parameters
+        while self.is_peek_token(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+
+            let identifier = match self.parse_identifier()? {
+                Expression::Identifier(ident) => ident,
+                _ => return None,
+            };
+            parameters.push(identifier);
+        }
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+
+        Some(parameters)
     }
 }
