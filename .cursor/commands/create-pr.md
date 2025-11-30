@@ -87,7 +87,50 @@ Create a comprehensive PR description with the following sections:
 - Screenshots or examples (if applicable)
 - Notes for reviewers
 
-## Step 6: Create the Pull Request
+## Step 6: Show PR Details and Request Approval
+
+Before creating the PR, display a summary of all PR details and request user approval:
+
+1. Display the following information clearly using markdown format:
+
+   ```markdown
+   ## Pull Request Details Preview
+
+   ### Repository Information
+
+   - **Source Branch (head)**: `[current branch name]`
+   - **Base Branch (base)**: `[main/master]`
+   - **Repository**: `[owner/repo]`
+
+   ### Title
+
+   [Generated PR title]
+
+   ### Description Preview
+
+   [First 200-300 chars of description]
+
+   ### Statistics
+
+   - **Files Changed**: [X files]
+   - **Commits**: [Y commits]
+
+   ### Summary of Changes
+
+   - **[Category 1]**: [brief description]
+   - **[Category 2]**: [brief description]
+   - ...
+   ```
+
+2. Show the complete PR title and full description body
+3. List the key files that will be changed
+4. Show commit count and commit messages summary
+5. **IMPORTANT**: Explicitly ask: "Do you want to proceed with creating this pull request? (yes/no)"
+6. Wait for user confirmation before proceeding to Step 7
+
+## Step 7: Create the Pull Request
+
+**Only proceed if user has approved in Step 6.**
 
 1. Use the GitHub MCP tool `mcp_github_create_pull_request` with:
    - `owner`: Extracted from git remote URL
@@ -98,7 +141,7 @@ Create a comprehensive PR description with the following sections:
    - `body`: Generated PR description
    - `draft`: Set to `false` (or `true` if user requests draft PR)
 
-## Step 7: Verify and Report
+## Step 8: Verify and Report
 
 1. After creating the PR, confirm success and provide:
    - PR number
@@ -107,6 +150,7 @@ Create a comprehensive PR description with the following sections:
 
 ## Important Notes
 
+- **CRITICAL**: Always show PR details and request explicit user approval before creating the PR (Step 6)
 - Always compare against `main` branch (or `master` if that's the default)
 - If the current branch is already `main`, inform the user and ask for clarification
 - If there are no differences between branches, inform the user
@@ -114,3 +158,4 @@ Create a comprehensive PR description with the following sections:
 - Include all relevant context to help reviewers understand the changes
 - Use markdown formatting for better readability
 - Follow the project's contribution guidelines (check CONTRIBUTING.md if available)
+- Never create a PR without explicit user approval after showing the PR details
