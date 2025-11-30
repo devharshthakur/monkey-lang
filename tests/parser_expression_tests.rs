@@ -543,3 +543,53 @@ fn test_parsing_function_parameter() {
     test_literal_expression_str(Expression::Identifier(func_lit.parameters[0].clone()), "x");
     test_literal_expression_str(Expression::Identifier(func_lit.parameters[1].clone()), "y");
 }
+
+// =============================================================================
+// Call Expression Tests
+// =============================================================================
+
+#[test]
+fn test_parsing_call_expression() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+
+    let l = Lexer::new(input.to_string());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+    // Check that the program has 1 statement
+    assert_eq!(program.statements.len(), 1);
+
+    // Check that the statement is an ExpressionStatement
+    let stmt = &program.statements[0];
+    // Check that the expression is a CallExpression
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+    };
+
+    // Check that the expression is a CallExpression
+    let call_expr = match &expr_stmt.value {
+        Expression::CallExpression(ce) => ce,
+        _ => panic!(
+            "expr_stmt.value is not a CallExpression. got={:?}",
+            expr_stmt.value
+        ),
+    };
+
+    // Check that the function is an Identifier
+    assert!(
+        test_identifier(*call_expr.function.clone(), "add"),
+        "call_expr.function is not 'add'. got={}",
+        call_expr.function
+    );
+    assert_eq!(
+        call_expr.arguments.len(),
+        3,
+        "call_expr.arguments does not contain 3 arguments. got={}",
+        call_expr.arguments.len()
+    );
+    // Check that the arguments are correct
+    test_literal_expression_str(call_expr.arguments[0].clone(), "1");
+    test_infix_expression_str(call_expr.arguments[1].clone(), "2", "*", "3");
+    test_infix_expression_str(call_expr.arguments[2].clone(), "4", "+", "5");
+}
