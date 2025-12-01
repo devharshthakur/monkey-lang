@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-<!-- Last generated: 2025-11-30 -->
+<!-- Last generated: 2025-01-27 -->
 
 ## Project Overview
 
@@ -25,35 +25,38 @@ Monkey features C-like syntax with variable bindings, prefix/infix operators, fi
 
 ```text
 monkey-lang/
-├── src/
-│   ├── main.rs          # Binary entry point (REPL startup)
-│   └── lib.rs           # Library root, re-exports modules
-├── lexer/
-│   ├── mod.rs           # Lexer implementation
-│   └── token.rs         # Token types and definitions
-├── ast/
-│   ├── mod.rs           # AST root, Node trait, Program struct
-│   ├── expression.rs    # Expression types (Identifier, Literals, etc.)
-│   └── statement.rs     # Statement types (Let, Return, Expression)
-├── parser/
-│   ├── mod.rs           # Pratt parser implementation
-│   ├── precedence.rs    # Operator precedence definitions
-│   └── test_helper.rs   # Test utilities for parser tests
-├── repl/
-│   └── mod.rs           # REPL implementation (tokenizes input)
+├── rust/                 # Rust implementation
+│   ├── cli/
+│   │   ├── main.rs       # Binary entry point (REPL startup)
+│   │   └── lib.rs        # Library root, re-exports modules
+│   ├── lexer/
+│   │   ├── mod.rs        # Lexer implementation
+│   │   └── token.rs      # Token types and definitions
+│   ├── ast/
+│   │   ├── mod.rs        # AST root, Node trait, Program struct
+│   │   ├── expression.rs # Expression types (Identifier, Literals, etc.)
+│   │   └── statement.rs  # Statement types (Let, Return, Expression)
+│   ├── parser/
+│   │   ├── mod.rs        # Pratt parser implementation
+│   │   ├── precedence.rs # Operator precedence definitions
+│   │   └── test_helper.rs # Test utilities for parser tests
+│   └── repl/
+│       └── mod.rs        # REPL implementation (tokenizes input)
 ├── tests/
 │   ├── parser_expression_tests.rs
 │   └── parser_statement_tests.rs
-├── go/                  # Original Go implementation (reference)
+├── go/                   # Original Go implementation (reference)
 ├── scripts/
-│   ├── ts/setup-rust.ts # Rust setup helper (TypeScript)
+│   ├── ts/setup-rust.ts  # Rust setup helper (TypeScript)
 │   └── bash/setup-rust.sh
 ├── md/
-│   ├── checklist.md     # Implementation progress tracker
-│   └── setup.md         # Setup instructions
-├── Cargo.toml           # Rust dependencies
-├── package.json         # Node.js dev dependencies
-└── JUSTFILE             # Task runner commands
+│   ├── checklist.md      # Implementation progress tracker
+│   └── setup.md          # Setup instructions
+├── rust/
+│   ├── Cargo.toml        # Rust dependencies (paths: cli/lib.rs, cli/main.rs)
+│   └── tests/            # Integration tests
+├── package.json          # Node.js dev dependencies
+└── JUSTFILE              # Task runner commands
 ```
 
 ## Key Dependencies
@@ -114,10 +117,12 @@ pnpm install  # Sets up Husky pre-commit hooks
 ### Module Dependencies
 
 ```text
-main.rs → repl → lexer
-lib.rs → lexer, ast, parser, repl
+rust/cli/main.rs → repl → lexer
+rust/cli/lib.rs → lexer, ast, parser, repl (uses #[path] attributes)
 parser → lexer, ast
 ```
+
+**Note:** `rust/cli/lib.rs` uses `#[path = "../..."]` attributes to reference modules in sibling directories (`rust/lexer/`, `rust/ast/`, etc.) rather than traditional module declarations. This allows the library entry point to be in `rust/cli/` while keeping modules organized in their respective subdirectories.
 
 ### Key Types
 
@@ -134,7 +139,7 @@ Uses **Pratt parsing** (top-down operator precedence):
 
 - Two-token lookahead (`curr_token`, `peek_token`)
 - Prefix/infix parse function registrations via HashMaps
-- Precedence levels defined in `parser/precedence.rs`
+- Precedence levels defined in `rust/parser/precedence.rs`
 
 ## Current Implementation Status
 
@@ -164,9 +169,9 @@ See `md/checklist.md` for detailed progress.
 
 Tests are located in:
 
-- `lexer/mod.rs` (inline tests)
-- `tests/parser_expression_tests.rs`
-- `tests/parser_statement_tests.rs`
+- `rust/lexer/mod.rs` (inline tests)
+- `rust/tests/parser_expression_tests.rs`
+- `rust/tests/parser_statement_tests.rs`
 
 ```bash
 cargo test                    # Run all tests
@@ -175,7 +180,7 @@ cargo test --test parser_expression_tests  # Specific test file
 
 ### Test Helpers
 
-`parser/test_helper.rs` provides utilities:
+`rust/parser/test_helper.rs` provides utilities:
 
 - `check_parser_errors()` - Assert no parser errors
 - `test_identifier()`, `test_integer_literal()`, etc.

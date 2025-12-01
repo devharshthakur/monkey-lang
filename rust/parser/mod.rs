@@ -14,8 +14,8 @@ pub mod test_helper;
 
 use crate::ast::{
     expression::{
-        BlockStatement, BooleanLiteral, Expression, FunctionLiteral, Identifier, IfExpression,
-        InfixExpression, IntegerLiteral, PrefixExpression,
+        BlockStatement, BooleanLiteral, CallExpression, Expression, FunctionLiteral, Identifier,
+        IfExpression, InfixExpression, IntegerLiteral, PrefixExpression,
     },
     statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
     Program,
@@ -80,6 +80,7 @@ impl Parser {
         p.register_infix_parse_fn(TokenType::NOTEQ, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::LT, Parser::parse_infix_expression);
         p.register_infix_parse_fn(TokenType::GT, Parser::parse_infix_expression);
+        p.register_infix_parse_fn(TokenType::LPAREN, Parser::parse_call_expression);
         // Advance the token buffer to have a two-token lookahead
         p.next_token();
         p.next_token();
@@ -645,5 +646,44 @@ impl Parser {
         }
 
         Some(parameters)
+    }
+
+    fn parse_call_expression(&mut self, function: Expression) -> Option<Expression> {
+        let token = self.curr_token.clone();
+        let arguments = self.parse_call_arguments()?;
+        Some(Expression::CallExpression(CallExpression {
+            token,
+            function: Box::new(function),
+            arguments,
+        }))
+    }
+    fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {
+        let mut arguments = Vec::new();
+
+        if self.is_peek_token(TokenType::RPAREN) {
+            self.next_token();
+            return Some(arguments);
+        }
+
+        self.next_token();
+        let first_arg = self.parse_expression(Precedence::LOWEST as i32)?;
+        arguments.push(first_arg);
+
+        while self.is_peek_token(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            let arg = self.parse_expression(Precedence::LOWEST as i32)?;
+            arguments.push(arg);
+        }
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            self.errors.push(format!(
+                "expected right parenthesis, got {} instead",
+                self.peek_token.literal
+            ));
+            return None;
+        }
+
+        Some(arguments)
     }
 }

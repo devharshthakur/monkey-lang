@@ -11,8 +11,3 @@ pub mod parser;
 
 #[path = "../repl/mod.rs"]
 pub mod repl;
-
-// Re-exports for convenience
-pub use ast::Program;
-pub use lexer::Lexer;
-pub use parser::Parser;

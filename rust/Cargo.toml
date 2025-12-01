@@ -5,11 +5,11 @@ edition = "2021"
 
 [lib]
 name = "monkey_lang"
-path = "rust/cli/lib.rs"
+path = "cli/lib.rs"
 
 [[bin]]
 name = "monkey"
-path = "rust/cli/main.rs"
+path = "cli/main.rs"
 
 [dependencies]
 colored = "3.0.0"
