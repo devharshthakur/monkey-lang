@@ -206,8 +206,8 @@ impl Parser {
     /// variant for type-safe statement handling.
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token.token_type {
-            TokenType::LET => Some(Statement::Let(self.parse_let_statement())),
-            TokenType::RETURN => Some(Statement::Return(self.parse_return_statement())),
+            TokenType::LET => self.parse_let_statement().map(Statement::Let),
+            TokenType::RETURN => self.parse_return_statement().map(Statement::Return),
             _ => self.parse_expression_statement().map(Statement::Expression),
         }
     }
@@ -215,21 +215,14 @@ impl Parser {
     /// Parses a let statement with the format: let <identifier> = <expression>;
     ///
     /// Expects the current token to be LET. Parses the identifier name and
-    /// expects an equals sign. Currently doesn't parse the actual expression
-    /// value (sets it to None). Returns a LetStatement with the token information.
-    fn parse_let_statement(&mut self) -> LetStatement {
+    /// expects an equals sign. Returns Some(LetStatement) if parsing succeeds,
+    /// None if parsing fails.
+    fn parse_let_statement(&mut self) -> Option<LetStatement> {
         let token = self.curr_token.clone();
 
         // Expect identifier after 'let'
         if !self.expect_peek(TokenType::IDENT) {
-            return LetStatement {
-                token,
-                name: Identifier {
-                    token: Token::new(TokenType::ILLEGAL, "".to_string()),
-                    value: "".to_string(),
-                },
-                value: None,
-            };
+            return None;
         }
         // Parse the identifier
         let name = Identifier {
@@ -237,30 +230,26 @@ impl Parser {
             value: self.curr_token.literal.clone(),
         };
 
+        let mut stmt = LetStatement {
+            token,
+            name,
+            value: None,
+        };
+
         // Expect '=' after identifier
         if !self.expect_peek(TokenType::ASSIGN) {
-            return LetStatement {
-                token,
-                name,
-                value: None,
-            };
+            return None;
         }
-
-        // Skip expression for now - just advance until semicolon
-        while !self.is_peek_token(TokenType::SEMICOLON) && !self.is_peek_token(TokenType::EOF) {
-            self.next_token();
-        }
+        // Advance to the next token to point to the value and parse the expression
+        self.next_token();
+        stmt.value = self.parse_expression(Precedence::LOWEST as i32);
 
         // Expect semicolon
         if self.is_peek_token(TokenType::SEMICOLON) {
             self.next_token();
         }
 
-        LetStatement {
-            token,
-            name,
-            value: None,
-        }
+        Some(stmt)
     }
 
     /// Parses a return statement with the format: return <expression>;
@@ -268,20 +257,23 @@ impl Parser {
     /// Expects the current token to be RETURN. Parses the expression value until
     /// it finds a semicolon. Currently doesn't parse the actual expression
     /// value (sets it to None). Returns a ReturnStatement with the token information.
-    fn parse_return_statement(&mut self) -> ReturnStatement {
+    fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
         let token = self.curr_token.clone();
 
-        // Skip expression for now - just advance until semicolon
-        while !self.is_peek_token(TokenType::SEMICOLON) && !self.is_peek_token(TokenType::EOF) {
-            self.next_token();
+        if self.curr_token.token_type != TokenType::RETURN {
+            return None;
         }
+
+        // Advance to the next token to point to the value and parse the expression
+        self.next_token();
+        let value = self.parse_expression(Precedence::LOWEST as i32);
 
         // Expect semicolon
         if self.is_peek_token(TokenType::SEMICOLON) {
             self.next_token();
         }
 
-        ReturnStatement { token, value: None }
+        Some(ReturnStatement { token, value })
     }
 
     /// Parses an identifier expression.

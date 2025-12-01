@@ -1,3 +1,4 @@
+use monkey_lang::ast::Statement;
 use monkey_lang::lexer::Lexer;
 use monkey_lang::parser::{test_helper::*, Parser};
 
@@ -14,7 +15,6 @@ let y = 10;
 let foobar = 838383;
 "#
     .to_string();
-
     let l = Lexer::new(input);
     let mut p = Parser::new(l);
 
@@ -22,24 +22,32 @@ let foobar = 838383;
     check_parser_errors(&p);
 
     assert!(
-        !program.statements.is_empty(),
-        "ParseProgram() returned empty program"
-    );
-    assert_eq!(
-        program.statements.len(),
-        3,
+        program.statements.len() == 3,
         "program.statements does not contain 3 statements. got={}",
         program.statements.len()
     );
 
-    let tests = vec!["x", "y", "foobar"];
-    for (i, expected_identifier) in tests.iter().enumerate() {
+    let expected: [(&str, i64); 3] = [("x", 5), ("y", 10), ("foobar", 838383)];
+    for (i, (identifier, expected_value)) in expected.iter().enumerate() {
         let stmt = &program.statements[i];
         assert!(
-            test_let_statement(stmt, expected_identifier),
-            "test_let_statement failed for statement {}",
+            test_let_statement(stmt, *identifier),
+            "test_let_statement failed at index {}",
             i
         );
+
+        let value = match stmt {
+            Statement::Let(let_stmt) => let_stmt.value.clone(),
+            _ => panic!("stmt is not a LetStatement"),
+        };
+
+        if let Some(value) = value {
+            assert!(
+                test_literal_expression(value, *expected_value),
+                "test_literal_expression failed at index {}",
+                i
+            );
+        }
     }
 }
 
