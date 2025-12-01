@@ -44,6 +44,7 @@ impl Precedence {
             TokenType::MINUS => Precedence::SUM as i32,
             TokenType::SLASH => Precedence::PRODUCT as i32,
             TokenType::ASTERISK => Precedence::PRODUCT as i32,
+            TokenType::LPAREN => Precedence::CALL as i32,
             _ => Precedence::LOWEST as i32,
         }
     }

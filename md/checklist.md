@@ -25,16 +25,17 @@ This checklist tracks our progress through the implementation of the Monkey prog
 - [x] Parse integer literals
 - [x] Parse prefix expressions (`!`, `-`)
 - [x] Parse infix expressions (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`)
-- [x] Write parser tests (tests for let statements, return statements, identifiers, integer literals, prefix expressions, infix expressions, and operator precedence)
-- [ ] Parse boolean literals (`true`, `false`)
-- [ ] Parse grouped expressions (parentheses)
-- [ ] Parse if/else expressions
-- [ ] Parse function literals
-- [ ] Parse call expressions
+- [x] Parse boolean literals (`true`, `false`)
+- [x] Parse grouped expressions (parentheses)
+- [x] Parse if/else expressions
+- [x] Parse function literals
+- [x] Parse block statements
+- [x] Write parser tests (tests for identifiers, integer literals, boolean literals, prefix expressions, infix expressions, operator precedence, if/else expressions, function literals, and function parameters)
+- [ ] Parse call expressions (AST type exists, but parser function not implemented)
 - [ ] Parse array literals
 - [ ] Parse hash literals
 - [ ] Parse index expressions
-- [ ] Implement expression parsing in let statement values
-- [ ] Implement expression parsing in return statement values
+- [ ] Implement expression parsing in let statement values (currently skips until semicolon)
+- [ ] Implement expression parsing in return statement values (currently skips until semicolon)
 
 > **Important**: Update this file as you complete each step! Mark items as complete by changing `[ ]` to `[x]` and add any relevant implementation details or notes.

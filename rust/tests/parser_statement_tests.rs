@@ -1,6 +1,10 @@
 use monkey_lang::lexer::Lexer;
 use monkey_lang::parser::{test_helper::*, Parser};
 
+// =============================================================================
+// Let Statement Tests
+// =============================================================================
+
 /// Tests parsing of multiple let statements.
 #[test]
 fn test_parsing_let_statements() {
@@ -38,6 +42,10 @@ let foobar = 838383;
         );
     }
 }
+
+// =============================================================================
+// Return Statement Tests
+// =============================================================================
 
 /// Tests parsing of multiple return statements.
 #[test]

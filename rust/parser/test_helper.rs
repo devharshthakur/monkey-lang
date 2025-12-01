@@ -225,6 +225,18 @@ pub fn test_literal_expression(exp: Expression, expected: i64) -> bool {
 
 #[track_caller]
 pub fn test_literal_expression_str(exp: Expression, expected: &str) -> bool {
+    // Try parsing as integer first
+    if let Ok(int_val) = expected.parse::<i64>() {
+        return test_integer_literal(exp, int_val);
+    }
+    // Try parsing as boolean
+    if expected == "true" {
+        return test_literal_expression_bool(exp, true);
+    }
+    if expected == "false" {
+        return test_literal_expression_bool(exp, false);
+    }
+    // Otherwise treat as identifier
     test_identifier(exp, expected)
 }
 

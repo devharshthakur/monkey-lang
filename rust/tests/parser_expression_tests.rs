@@ -2,6 +2,10 @@ use monkey_lang::ast::{expression::Expression, statement::Statement, Node};
 use monkey_lang::lexer::Lexer;
 use monkey_lang::parser::{test_helper::*, Parser};
 
+// =============================================================================
+// Identifier & Integer Literal Tests
+// =============================================================================
+
 /// Tests parsing of a single identifier expression.
 #[test]
 fn test_parsing_identifier_expression() {
@@ -74,6 +78,10 @@ fn test_parsing_integer_literal_expression() {
         int_lit.token_literal()
     );
 }
+
+// =============================================================================
+// Prefix & Infix Expression Tests
+// =============================================================================
 
 /// Tests parsing of prefix expressions (e.g., `!5`, `-15`, `!foobar`, `-foobar`).
 #[test]
@@ -221,7 +229,75 @@ fn test_parsing_infix_expression() {
     }
 }
 
-// Testing if expressions : if (<condition>) <consequence>
+// =============================================================================
+// Operator Precedence Tests
+// =============================================================================
+
+/// Tests operator precedence parsing to ensure expressions are parsed correctly
+/// according to operator precedence rules.
+#[test]
+fn test_operator_precedence_parsing() {
+    let tests: Vec<(&str, &str)> = vec![
+        // Prefix operators with infix operators
+        ("-a * b;", "((-a) * b)"),
+        ("!-a;", "(!(-a))"),
+        // Left-associative operators
+        ("a + b + c;", "((a + b) + c)"),
+        ("a + b - c;", "((a + b) - c)"),
+        ("a * b * c;", "((a * b) * c)"),
+        ("a * b / c;", "((a * b) / c)"),
+        // Precedence: multiplication/division higher than addition/subtraction
+        ("a + b / c;", "(a + (b / c))"),
+        ("a + b * c + d / e - f;", "(((a + (b * c)) + (d / e)) - f)"),
+        // Multiple statements
+        ("3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"),
+        // Comparison operators
+        ("5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))"),
+        ("5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))"),
+        // Mixed precedence
+        (
+            "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        ),
+        // Boolean operators
+        ("true;", "true"),
+        ("false;", "false"),
+        ("3 > 5 == false;", "((3 > 5) == false)"),
+        ("3 < 5 == true;", "((3 < 5) == true)"),
+        ("!(true == true);", "(!(true == true))"),
+        // Function call expressions
+        ("a + add(b * c) + d;", "((a + add((b * c))) + d)"),
+        (
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        ),
+        (
+            "add(a + b + c * d / f + g);",
+            "add((((a + b) + ((c * d) / f)) + g))",
+        ),
+    ];
+
+    for (input, expected) in tests {
+        let l = Lexer::new(input.to_string());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+
+        check_parser_errors(&p);
+
+        let actual = format!("{}", program);
+        assert_eq!(
+            actual, expected,
+            "expected={:?}, got={:?}",
+            expected, actual
+        );
+    }
+}
+
+// =============================================================================
+// If Expression Tests
+// =============================================================================
+
+/// Tests parsing of if expressions: if (<condition>) <consequence>
 #[test]
 fn test_parsing_if_expression() {
     let input = "if (x < y) { x }";
@@ -286,7 +362,7 @@ fn test_parsing_if_expression() {
     }
 }
 
-// Testing if expressions : if (<condition>) <consequence> else <alternative>
+/// Tests parsing of if-else expressions: if (<condition>) <consequence> else <alternative>
 #[test]
 fn test_parsing_if_else_expression() {
     let input = "if (x < y) { x } else { y }";
@@ -370,4 +446,160 @@ fn test_parsing_if_else_expression() {
     if !test_identifier(alternative_stmt.value.clone(), "y") {
         return;
     }
+}
+
+// =============================================================================
+// Function Literal Tests
+// =============================================================================
+
+#[test]
+fn test_parsing_function_literal() {
+    let input = "fn(x, y) { x + y; }";
+    // Create a new lexer and parser
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+    // Check that the program has 1 statement
+    assert_eq!(
+        program.statements.len(),
+        1,
+        "program.statements does not contain 1 statement. got={}",
+        program.statements.len()
+    );
+    // Check that the statement is an ExpressionStatement
+    let stmt = program.statements[0].clone();
+    // Check that the statement is an ExpressionStatement
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not ExpressionStatement. got={:?}", stmt),
+    };
+
+    // Check that the expression is a FunctionLiteral
+    let func_lit = match expr_stmt.value {
+        Expression::FunctionLiteral(func_lit) => func_lit,
+        _ => panic!(
+            "expr_stmt.value is not FunctionLiteral. got={:?}",
+            expr_stmt.value
+        ),
+    };
+
+    // Check that the function literal has 2 parameters
+    assert_eq!(
+        func_lit.parameters.len(),
+        2,
+        "func_lit.parameters does not contain 2 parameters. got={}",
+        func_lit.parameters.len()
+    );
+    // Check that the function literal has the correct parameters
+    test_literal_expression_str(Expression::Identifier(func_lit.parameters[0].clone()), "x");
+    test_literal_expression_str(Expression::Identifier(func_lit.parameters[1].clone()), "y");
+
+    // Check that the function literal has 1 body statement
+    assert_eq!(
+        func_lit.body.statements.len(),
+        1,
+        "function body does not contain 1 statement. got={}",
+        func_lit.body.statements.len()
+    );
+
+    // Check that the body statement is an ExpressionStatement
+    let body_stmt = func_lit.body.statements[0].clone();
+    let body_expr = match body_stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("body_stmt is not ExpressionStatement. got={:?}", body_stmt),
+    };
+
+    test_infix_expression_str(body_expr.value, "x", "+", "y");
+}
+
+#[test]
+fn test_parsing_function_parameter() {
+    let input = "fn(x, y) { x + y; }";
+    // Create a new lexer and parser
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+    // Check that the program has 1 statement
+    assert_eq!(
+        program.statements.len(),
+        1,
+        "program.statements does not contain 1 statement. got={}",
+        program.statements.len()
+    );
+    // Check that the statement is an ExpressionStatement
+    let stmt = program.statements[0].clone();
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not ExpressionStatement. got={:?}", stmt),
+    };
+    // Check that the expression is a FunctionLiteral
+    let func_lit = match expr_stmt.value {
+        Expression::FunctionLiteral(func_lit) => func_lit,
+        _ => panic!(
+            "expr_stmt.value is not FunctionLiteral. got={:?}",
+            expr_stmt.value
+        ),
+    };
+    // Check that the function literal has 2 parameters
+    assert_eq!(
+        func_lit.parameters.len(),
+        2,
+        "func_lit.parameters does not contain 2 parameters. got={}",
+        func_lit.parameters.len()
+    );
+    // Check that the function literal has the correct parameters
+    test_literal_expression_str(Expression::Identifier(func_lit.parameters[0].clone()), "x");
+    test_literal_expression_str(Expression::Identifier(func_lit.parameters[1].clone()), "y");
+}
+
+// =============================================================================
+// Call Expression Tests
+// =============================================================================
+
+#[test]
+fn test_parsing_call_expression() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+
+    let l = Lexer::new(input.to_string());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+    // Check that the program has 1 statement
+    assert_eq!(program.statements.len(), 1);
+
+    // Check that the statement is an ExpressionStatement
+    let stmt = &program.statements[0];
+    // Check that the expression is a CallExpression
+    let expr_stmt = match stmt {
+        Statement::Expression(expr_stmt) => expr_stmt,
+        _ => panic!("stmt is not an ExpressionStatement. got={:?}", stmt),
+    };
+
+    // Check that the expression is a CallExpression
+    let call_expr = match &expr_stmt.value {
+        Expression::CallExpression(ce) => ce,
+        _ => panic!(
+            "expr_stmt.value is not a CallExpression. got={:?}",
+            expr_stmt.value
+        ),
+    };
+
+    // Check that the function is an Identifier
+    assert!(
+        test_identifier(*call_expr.function.clone(), "add"),
+        "call_expr.function is not 'add'. got={}",
+        call_expr.function
+    );
+    assert_eq!(
+        call_expr.arguments.len(),
+        3,
+        "call_expr.arguments does not contain 3 arguments. got={}",
+        call_expr.arguments.len()
+    );
+    // Check that the arguments are correct
+    test_literal_expression_str(call_expr.arguments[0].clone(), "1");
+    test_infix_expression_str(call_expr.arguments[1].clone(), "2", "*", "3");
+    test_infix_expression_str(call_expr.arguments[2].clone(), "4", "+", "5");
 }

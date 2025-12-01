@@ -1,6 +1,6 @@
 # Monkey Language
 
-<img width="250" height="282" alt="monkey_lang" src="https://github.com/user-attachments/assets/f1c7457b-8535-4d2c-a4fa-4d3ca16dda9a" />
+![monkey_lang](https://github.com/user-attachments/assets/f1c7457b-8535-4d2c-a4fa-4d3ca16dda9a)
 
 ## What’s Monkey?
 
@@ -19,6 +19,12 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 ## Setup, Running & Development
 
 To setup the project refer [SETUP](./md/setup.md) file.
+
+## Documentation
+
+- **[`agent.md`](./agent.md)** - Comprehensive project context for AI agents, including architecture, conventions, and development guidelines
+- **[`md/setup.md`](./md/setup.md)** - Detailed setup instructions
+- **[`md/checklist.md`](./md/checklist.md)** - Implementation progress tracker
 
 ## Progress Tracking
 

@@ -28,6 +28,8 @@ pub enum Expression {
     BlockStatement(BlockStatement),
     /// A function literal expression (e.g., `fn(x, y) { x + y }`)
     FunctionLiteral(FunctionLiteral),
+    /// A call expression (e.g., `add(1, 2)`)
+    CallExpression(CallExpression),
 }
 
 // ============ STRUCTS ============
@@ -101,7 +103,48 @@ pub struct FunctionLiteral {
     pub body: BlockStatement,
 }
 
+/// Represents a call expression in the Monkey language AST.
+/// The format of a call expression is: <function>(<arguments>)
+#[derive(Debug, Clone)]
+pub struct CallExpression {
+    pub token: Token,
+    pub function: Box<Expression>,
+    pub arguments: Vec<Expression>,
+}
+
 // ============ TRAIT IMPLEMENTATIONS ============
+
+impl Node for Expression {
+    fn token_literal(&self) -> &str {
+        match self {
+            Expression::Identifier(ident) => ident.token_literal(),
+            Expression::IntegerLiteral(il) => il.token_literal(),
+            Expression::BooleanLiteral(bl) => bl.token_literal(),
+            Expression::PrefixExpression(pe) => pe.token_literal(),
+            Expression::InfixExpression(infe) => infe.token_literal(),
+            Expression::IfExpression(ife) => ife.token_literal(),
+            Expression::BlockStatement(bs) => bs.token_literal(),
+            Expression::FunctionLiteral(fl) => fl.token_literal(),
+            Expression::CallExpression(ce) => ce.token_literal(),
+        }
+    }
+}
+
+impl Display for Expression {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Expression::Identifier(ident) => write!(f, "{}", ident),
+            Expression::IntegerLiteral(il) => write!(f, "{}", il),
+            Expression::BooleanLiteral(bl) => write!(f, "{}", bl),
+            Expression::PrefixExpression(pe) => write!(f, "{}", pe),
+            Expression::InfixExpression(ie) => write!(f, "{}", ie),
+            Expression::IfExpression(ife) => write!(f, "{}", ife),
+            Expression::BlockStatement(bs) => write!(f, "{}", bs),
+            Expression::FunctionLiteral(fl) => write!(f, "{}", fl),
+            Expression::CallExpression(ce) => write!(f, "{}", ce),
+        }
+    }
+}
 
 impl Node for Identifier {
     fn token_literal(&self) -> &str {
@@ -182,33 +225,21 @@ impl Display for FunctionLiteral {
     }
 }
 
-impl Node for Expression {
+impl Node for CallExpression {
     fn token_literal(&self) -> &str {
-        match self {
-            Expression::Identifier(ident) => ident.token_literal(),
-            Expression::IntegerLiteral(il) => il.token_literal(),
-            Expression::BooleanLiteral(bl) => bl.token_literal(),
-            Expression::PrefixExpression(pe) => pe.token_literal(),
-            Expression::InfixExpression(infe) => infe.token_literal(),
-            Expression::IfExpression(ife) => ife.token_literal(),
-            Expression::BlockStatement(bs) => bs.token_literal(),
-            Expression::FunctionLiteral(fl) => fl.token_literal(),
-        }
+        &self.token.literal
     }
 }
 
-impl Display for Expression {
+impl Display for CallExpression {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Expression::Identifier(ident) => write!(f, "{}", ident),
-            Expression::IntegerLiteral(il) => write!(f, "{}", il),
-            Expression::BooleanLiteral(bl) => write!(f, "{}", bl),
-            Expression::PrefixExpression(pe) => write!(f, "{}", pe),
-            Expression::InfixExpression(ie) => write!(f, "{}", ie),
-            Expression::IfExpression(ife) => write!(f, "{}", ife),
-            Expression::BlockStatement(bs) => write!(f, "{}", bs),
-            Expression::FunctionLiteral(fl) => write!(f, "{}", fl),
+        let mut args = Vec::<String>::new();
+        for arg in self.arguments.iter() {
+            args.push(arg.to_string());
         }
+        write!(f, "{}", self.function)?;
+        write!(f, "({})", args.join(", "))?;
+        Ok(())
     }
 }
 

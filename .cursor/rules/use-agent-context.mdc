@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+
+# Always Use Agent.md Context
+
+- Always read and reference `agent.md` at the start of any coding task or query
+- Use `agent.md` as the primary source of truth for:
+  - Project structure and architecture
+  - Technology stack and dependencies
+  - Development setup and commands
+  - Coding conventions and standards
+  - Current implementation status
+  - Testing patterns and helpers
+- Before making changes, verify they align with the project structure documented in `agent.md`
+- When suggesting new features or changes, check `agent.md` to ensure they fit the project's scope and architecture
+- Reference `agent.md` when explaining project context or answering questions about the codebase
+- If `agent.md` appears outdated, suggest running `/update-agent` command to refresh it
