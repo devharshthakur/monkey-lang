@@ -179,11 +179,9 @@ impl Lexer {
             '!' => {
                 // Here we have two cases '!' or '!=' they both are separate tokens so need to check
                 if self.peek_char() == '=' {
-                    let ch1 = self.curr_char;
-                    let ch2 = self.peek_char();
-                    let literal = format!("{}{}", ch1, ch2);
+                    let ch = self.curr_char;
                     self.read_char();
-                    self.read_char();
+                    let literal = format!("{}{}", ch, self.curr_char);
                     Token::new(TokenType::NOTEQ, literal, line, column)
                 } else {
                     Token::new(TokenType::BANG, self.curr_char.to_string(), line, column)

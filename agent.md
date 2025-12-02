@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-<!-- Last generated: 2025-01-27 -->
+<!-- Last generated: 2025-01-28 -->
 
 ## Project Overview
 
@@ -41,7 +41,8 @@ monkey-lang/
 │   │   ├── precedence.rs # Operator precedence definitions
 │   │   └── test_helper.rs # Test utilities for parser tests
 │   └── repl/
-│       └── mod.rs        # REPL implementation (tokenizes input)
+│       ├── mod.rs        # REPL implementation (tokenizes and parses input)
+│       └── display.rs    # REPL display utilities (welcome message, error printing)
 ├── tests/
 │   ├── parser_expression_tests.rs
 │   └── parser_statement_tests.rs
@@ -63,10 +64,12 @@ monkey-lang/
 
 ### Rust (Cargo.toml)
 
-| Dependency | Purpose                               |
-| ---------- | ------------------------------------- |
-| `colored`  | Terminal output coloring for REPL     |
-| `users`    | Get current username for REPL welcome |
+| Dependency   | Purpose                                         |
+| ------------ | ----------------------------------------------- |
+| `colored`    | Terminal output coloring for REPL               |
+| `users`      | Get current username for REPL welcome           |
+| `log`        | Logging facade for debug tracing                |
+| `env_logger` | Logger implementation (controlled via RUST_LOG) |
 
 ### Dev Dependencies (package.json)
 
@@ -117,18 +120,19 @@ pnpm install  # Sets up Husky pre-commit hooks
 ### Module Dependencies
 
 ```text
-rust/cli/main.rs → repl → lexer
+rust/cli/main.rs → repl → lexer, parser
 rust/cli/lib.rs → lexer, ast, parser, repl (uses #[path] attributes)
 parser → lexer, ast
+repl → lexer, parser, display
 ```
 
 **Note:** `rust/cli/lib.rs` uses `#[path = "../..."]` attributes to reference modules in sibling directories (`rust/lexer/`, `rust/ast/`, etc.) rather than traditional module declarations. This allows the library entry point to be in `rust/cli/` while keeping modules organized in their respective subdirectories.
 
 ### Key Types
 
-- **`Lexer`** - Tokenizes input string into tokens
-- **`Token`** / **`TokenType`** - Token representation
-- **`Parser`** - Pratt parser producing AST
+- **`Lexer`** - Tokenizes input string into tokens with position tracking
+- **`Token`** / **`TokenType`** - Token representation with line/column position
+- **`Parser`** - Pratt parser producing AST with enhanced error reporting
 - **`Program`** - Root AST node containing statements
 - **`Statement`** - Let, Return, Expression statements
 - **`Expression`** - Identifier, Literals, Prefix/Infix, If, Function, Call
@@ -140,22 +144,26 @@ Uses **Pratt parsing** (top-down operator precedence):
 - Two-token lookahead (`curr_token`, `peek_token`)
 - Prefix/infix parse function registrations via HashMaps
 - Precedence levels defined in `rust/parser/precedence.rs`
+- Enhanced error reporting with source position (line/column) in all error messages
+- Optional debug tracing via `log` crate (enable with `RUST_LOG=debug`)
 
 ## Current Implementation Status
 
 **Completed:**
 
-- Full lexer with all tokens
+- Full lexer with all tokens and source position tracking
 - Let and Return statement parsing (basic)
 - Expression parsing: identifiers, integers, booleans, prefix, infix
 - If/else expressions
 - Function literals
 - Grouped expressions (parentheses)
 - Block statements
+- Call expressions
+- Parser debugging improvements (source position in errors, debug tracing)
 
 **In Progress:**
 
-- Call expressions
+- (None currently)
 
 **Pending:**
 
@@ -217,3 +225,5 @@ See `CONTRIBUTING.md` for full guidelines.
 4. **Tests are critical** - add tests for any new parsing functionality
 5. **Branch naming**: Feature branches follow `devharshthakur/issue{N}` pattern
 6. **Run `just pc`** before commits to ensure formatting and linting pass
+7. **Parser debugging**: All parser errors include `[line X:Y]` format. Enable debug tracing with `RUST_LOG=debug cargo run`
+8. **Token structure**: Token now includes `line` and `column` fields - always provide position when creating tokens
