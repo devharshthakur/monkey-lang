@@ -1,84 +1,64 @@
-use colored::Colorize;
-
-pub const MONKEY_FACE: &str = r#"            
-        .--.  .-"__,__"-.  .--.
-       / .. \/  .-. .-.  \/ .. \
-      | |  '|  /   Y   \  |'  | |
-      | \   \  \ 0 | 0 /  /   / |
-       \ '- ,\.-"""""""-./, -' /
-        ''-' /_   ^ ^   _\ '-''
-            |  \._   _./  |
-            \   \ '~' /   /
-             '._ '-=-' _.'
-                '-----'
-"#;
-
-pub fn print_welcome(username: &str) {
-    // Print banner
-    println!("\n{}", MONKEY_FACE.cyan());
-    println!("  {}\n", "Monkey Programming Language".cyan().bold());
-
-    println!("{}", format!("Welcome, {}!", username).green().bold());
-    println!(
-        "{} {}",
-        "Status:".bright_black(),
-        "Currently in development".yellow()
-    );
-    println!(
-        "{} {}",
-        "REPL:".bright_black(),
-        "Lexer is functional".green()
-    );
-    println!(
-        "{} {}\n",
-        "Note:".bright_black(),
-        "Not all features are implemented yet".blue()
-    );
-
-    println!(
-        "{}\n",
-        "Type your commands below. Press Ctrl+D or Ctrl+C to exit.".bright_black()
-    );
-}
-
-use crate::lexer::{token::TokenType, Lexer};
+//! REPL for the Monkey programming language
+//!
+//! This module provides a REPL for the Monkey programming language. It allows
+//! the user to enter expressions and statements, and it will print the result.
+//!
+//! # Examples
+//!
+//! ```
+//! let x = 10;
+//! println!("x is {}", x);
+//! ```
+use crate::{lexer::Lexer, parser::Parser};
+pub use display::MONKEY_LOGO;
+use display::{print_parser_errors, print_welcome, CYAN, GRAY, RESET};
 use std::io::{self, BufRead, Write};
-
-// ANSI color codes
-const RESET: &str = "\x1b[0m";
-const CYAN: &str = "\x1b[36m";
-const GRAY: &str = "\x1b[90m";
+mod display;
 
 const PROMPT: &str = ">>";
 
-pub fn start<R: BufRead, W: Write>(input: R, mut output: W) -> io::Result<()> {
+/// Starts the REPL
+/// # Parameters
+/// - `input`: The input reader to read the lines from
+/// - `output`: The output writer to write the lines to
+/// # Returns
+/// - `Ok(())` if the REPL was started successfully
+/// - `Err(e)` if an error occurred while starting the REPL
+pub fn repl<R: BufRead, W: Write>(input: R, mut output: W) -> io::Result<()> {
+    print_welcome();
+
     let mut reader = input;
     let mut line = String::new();
 
     loop {
+        // Print prompt
         write!(output, "{}{}{} ", CYAN, PROMPT, RESET)?;
         output.flush()?;
         line.clear();
-
+        // Read line from input
         let bytes_read = reader.read_line(&mut line)?;
         if bytes_read == 0 {
+            // If no bytes read, print goodbye message and exit
             println!("\n{}Goodbye!{}", GRAY, RESET);
             return Ok(());
         }
-
+        // If line is empty, continue to next iteration
         let trimmed_line = line.trim_end_matches(['\n', '\r']);
         if trimmed_line.is_empty() {
             continue;
         }
 
-        let mut lexer = Lexer::new(trimmed_line.to_string());
+        // Create lexer and parse tokens
+        let lexer = Lexer::new(trimmed_line.to_string());
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
 
-        loop {
-            let token = lexer.next_token();
-            writeln!(output, "  {}{:?}{}", GRAY, token, RESET)?;
-            if token.token_type == TokenType::EOF {
-                break;
-            }
+        // If there are parser errors, print them and continue to next iteration
+        if !parser.errors.is_empty() {
+            print_parser_errors(&mut output, &parser.errors)?;
+            continue;
         }
+
+        println!("{}", program);
     }
 }

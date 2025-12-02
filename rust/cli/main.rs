@@ -1,16 +1,14 @@
-use monkey_lang::repl::{print_welcome, start};
+use monkey_lang::repl::repl;
 use std::io;
 
 fn main() -> io::Result<()> {
-    let username = users::get_current_username()
-        .and_then(|name| name.into_string().ok())
-        .unwrap_or_else(|| "unknownuser".to_string());
-
-    print_welcome(&username);
+    // Initialize logger (can be controlled via RUST_LOG environment variable)
+    // Examples: RUST_LOG=debug, RUST_LOG=monkey_lang::parser=debug
+    env_logger::Builder::from_default_env().init();
 
     let stdin = io::stdin().lock();
     let stdout = io::stdout().lock();
 
-    start(stdin, stdout)?;
+    repl(stdin, stdout)?;
     Ok(())
 }

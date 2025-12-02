@@ -7,6 +7,8 @@ pub struct Lexer {
     curr_position: usize,
     next_read_position: usize,
     curr_char: char, // We currently supports ASCII character only
+    line: usize,
+    column: usize,
 }
 
 impl Lexer {
@@ -21,6 +23,8 @@ impl Lexer {
             curr_position: 0,
             next_read_position: 0,
             curr_char: '\0', // \0 => Null
+            line: 1,
+            column: 0, // Will be 1 after first read_char
         };
         l.read_char();
         l
@@ -30,19 +34,30 @@ impl Lexer {
     ///
     /// This method updates the current character and advances both the current
     /// position and read position. If we've reached the end of the input,
-    /// it sets the current character to null ('\0').
+    /// it sets the current character to null ('\0'). Also tracks line and column
+    /// position for error reporting.
     fn read_char(&mut self) {
+        // Update line/column based on current character before advancing
+        if self.curr_char == '\n' {
+            self.line += 1;
+            self.column = 0; // Reset to 0, will be 1 after increment below
+        }
+
         if self.next_read_position >= self.input.len() {
-            self.curr_char = '\0'
+            self.curr_char = '\0';
         } else {
             let (index, character) = self
                 .input
                 .char_indices()
                 .find(|(idx, _)| *idx == self.next_read_position)
                 .unwrap();
+
             self.curr_char = character;
             self.curr_position = index;
         }
+
+        // Increment column for the character we just read (or EOF)
+        self.column += 1;
         self.next_read_position += self.curr_char.len_utf8();
     }
 
@@ -71,6 +86,7 @@ impl Lexer {
     ///
     /// This method advances the lexer position past any whitespace characters
     /// (spaces, tabs, newlines, etc.) until it encounters a non-whitespace character.
+    /// Line/column tracking is handled by read_char.
     fn skip_white_space(&mut self) {
         while self.curr_char.is_ascii_whitespace() {
             self.read_char();
@@ -111,6 +127,12 @@ impl Lexer {
         self.input[start_position..self.curr_position].to_string()
     }
 
+    /// Gets the current column position.
+    /// This is used to capture the starting column for multi-character tokens.
+    fn get_column(&self) -> usize {
+        self.column
+    }
+
     /// Reads a numeric literal from the current position.
     ///
     /// This method reads consecutive digit characters starting from the current position.
@@ -136,6 +158,10 @@ impl Lexer {
     pub fn next_token(&mut self) -> Token {
         self.skip_white_space();
 
+        // Capture position before reading token
+        let line = self.line;
+        let column = self.column;
+
         let token = match self.curr_char {
             '=' => {
                 // Handling '==' case
@@ -143,13 +169,13 @@ impl Lexer {
                     let ch = self.curr_char;
                     self.read_char();
                     let literal = format!("{}{}", ch, self.curr_char);
-                    Token::new(TokenType::EQ, literal)
+                    Token::new(TokenType::EQ, literal, line, column)
                 } else {
                     // Handling '=' case : Its a assingment operator
-                    Token::new(TokenType::ASSIGN, self.curr_char.to_string())
+                    Token::new(TokenType::ASSIGN, self.curr_char.to_string(), line, column)
                 }
             }
-            '-' => Token::new(TokenType::MINUS, self.curr_char.to_string()),
+            '-' => Token::new(TokenType::MINUS, self.curr_char.to_string(), line, column),
             '!' => {
                 // Here we have two cases '!' or '!=' they both are separate tokens so need to check
                 if self.peek_char() == '=' {
@@ -158,34 +184,46 @@ impl Lexer {
                     let literal = format!("{}{}", ch1, ch2);
                     self.read_char();
                     self.read_char();
-                    Token::new(TokenType::NOTEQ, literal)
+                    Token::new(TokenType::NOTEQ, literal, line, column)
                 } else {
-                    Token::new(TokenType::BANG, self.curr_char.to_string())
+                    Token::new(TokenType::BANG, self.curr_char.to_string(), line, column)
                 }
             }
-            '/' => Token::new(TokenType::SLASH, self.curr_char.to_string()),
-            '*' => Token::new(TokenType::ASTERISK, self.curr_char.to_string()),
-            '<' => Token::new(TokenType::LT, self.curr_char.to_string()),
-            '>' => Token::new(TokenType::GT, self.curr_char.to_string()),
-            '+' => Token::new(TokenType::PLUS, self.curr_char.to_string()),
-            ',' => Token::new(TokenType::COMMA, self.curr_char.to_string()),
-            ';' => Token::new(TokenType::SEMICOLON, self.curr_char.to_string()),
-            '(' => Token::new(TokenType::LPAREN, self.curr_char.to_string()),
-            ')' => Token::new(TokenType::RPAREN, self.curr_char.to_string()),
-            '{' => Token::new(TokenType::LBRACE, self.curr_char.to_string()),
-            '}' => Token::new(TokenType::RBRACE, self.curr_char.to_string()),
-            '\0' => Token::new(TokenType::EOF, "".to_string()),
+            '/' => Token::new(TokenType::SLASH, self.curr_char.to_string(), line, column),
+            '*' => Token::new(
+                TokenType::ASTERISK,
+                self.curr_char.to_string(),
+                line,
+                column,
+            ),
+            '<' => Token::new(TokenType::LT, self.curr_char.to_string(), line, column),
+            '>' => Token::new(TokenType::GT, self.curr_char.to_string(), line, column),
+            '+' => Token::new(TokenType::PLUS, self.curr_char.to_string(), line, column),
+            ',' => Token::new(TokenType::COMMA, self.curr_char.to_string(), line, column),
+            ';' => Token::new(
+                TokenType::SEMICOLON,
+                self.curr_char.to_string(),
+                line,
+                column,
+            ),
+            '(' => Token::new(TokenType::LPAREN, self.curr_char.to_string(), line, column),
+            ')' => Token::new(TokenType::RPAREN, self.curr_char.to_string(), line, column),
+            '{' => Token::new(TokenType::LBRACE, self.curr_char.to_string(), line, column),
+            '}' => Token::new(TokenType::RBRACE, self.curr_char.to_string(), line, column),
+            '\0' => Token::new(TokenType::EOF, "".to_string(), line, column),
             _ => {
                 // Handling identifiers and numbers
                 if self.is_letter() {
+                    let start_col = self.get_column();
                     let literal = self.read_identifier();
                     let token_type = lookup_identifier(&literal);
-                    return Token::new(token_type, literal);
+                    return Token::new(token_type, literal, line, start_col);
                 } else if self.is_digit() {
+                    let start_col = self.get_column();
                     let literal = self.read_number();
-                    return Token::new(TokenType::INT, literal);
+                    return Token::new(TokenType::INT, literal, line, start_col);
                 } else {
-                    Token::new(TokenType::ILLEGAL, self.curr_char.to_string())
+                    Token::new(TokenType::ILLEGAL, self.curr_char.to_string(), line, column)
                 }
             }
         };

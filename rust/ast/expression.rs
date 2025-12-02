@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn test_identifier_display() {
         let ident = Identifier {
-            token: Token::new(TokenType::IDENT, "foobar".to_string()),
+            token: Token::new(TokenType::IDENT, "foobar".to_string(), 1, 1),
             value: "foobar".to_string(),
         };
 
@@ -298,11 +298,11 @@ mod tests {
     #[test]
     fn test_prefix_expression_display_bang() {
         let ident = Identifier {
-            token: Token::new(TokenType::IDENT, "foobar".to_string()),
+            token: Token::new(TokenType::IDENT, "foobar".to_string(), 1, 2),
             value: "foobar".to_string(),
         };
         let prefix = PrefixExpression {
-            token: Token::new(TokenType::BANG, "!".to_string()),
+            token: Token::new(TokenType::BANG, "!".to_string(), 1, 1),
             operator: "!".to_string(),
             right: Box::new(Expression::Identifier(ident)),
         };
@@ -314,11 +314,11 @@ mod tests {
     #[test]
     fn test_prefix_expression_display_minus() {
         let int_lit = IntegerLiteral {
-            token: Token::new(TokenType::INT, "5".to_string()),
+            token: Token::new(TokenType::INT, "5".to_string(), 1, 2),
             value: 5,
         };
         let prefix = PrefixExpression {
-            token: Token::new(TokenType::MINUS, "-".to_string()),
+            token: Token::new(TokenType::MINUS, "-".to_string(), 1, 1),
             operator: "-".to_string(),
             right: Box::new(Expression::IntegerLiteral(int_lit)),
         };
@@ -330,15 +330,15 @@ mod tests {
     #[test]
     fn test_infix_expression_display_plus() {
         let left = IntegerLiteral {
-            token: Token::new(TokenType::INT, "5".to_string()),
+            token: Token::new(TokenType::INT, "5".to_string(), 1, 1),
             value: 5,
         };
         let right = IntegerLiteral {
-            token: Token::new(TokenType::INT, "3".to_string()),
+            token: Token::new(TokenType::INT, "3".to_string(), 1, 5),
             value: 3,
         };
         let infix = InfixExpression {
-            token: Token::new(TokenType::PLUS, "+".to_string()),
+            token: Token::new(TokenType::PLUS, "+".to_string(), 1, 3),
             left: Box::new(Expression::IntegerLiteral(left)),
             operator: "+".to_string(),
             right: Box::new(Expression::IntegerLiteral(right)),
@@ -351,15 +351,15 @@ mod tests {
     #[test]
     fn test_infix_expression_display_eq() {
         let left = Identifier {
-            token: Token::new(TokenType::IDENT, "x".to_string()),
+            token: Token::new(TokenType::IDENT, "x".to_string(), 1, 1),
             value: "x".to_string(),
         };
         let right = Identifier {
-            token: Token::new(TokenType::IDENT, "y".to_string()),
+            token: Token::new(TokenType::IDENT, "y".to_string(), 1, 5),
             value: "y".to_string(),
         };
         let infix = InfixExpression {
-            token: Token::new(TokenType::EQ, "==".to_string()),
+            token: Token::new(TokenType::EQ, "==".to_string(), 1, 3),
             left: Box::new(Expression::Identifier(left)),
             operator: "==".to_string(),
             right: Box::new(Expression::Identifier(right)),

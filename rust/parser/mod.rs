@@ -24,6 +24,7 @@ use crate::lexer::{
     token::{Token, TokenType},
     Lexer,
 };
+use log::debug;
 use precedence::Precedence;
 use std::collections::HashMap;
 
@@ -53,8 +54,8 @@ impl Parser {
     pub fn new(l: Lexer) -> Self {
         let mut p = Parser {
             l,
-            curr_token: Token::new(TokenType::EOF, "".to_string()),
-            peek_token: Token::new(TokenType::EOF, "".to_string()),
+            curr_token: Token::new(TokenType::EOF, "".to_string(), 0, 0),
+            peek_token: Token::new(TokenType::EOF, "".to_string(), 0, 0),
             errors: Vec::new(),
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
@@ -130,12 +131,16 @@ impl Parser {
     /// Adds a peek error to the parser's error list.
     ///
     /// Creates a descriptive error message indicating what token type was expected
-    /// versus what was actually found in the peek position. This helps with
-    /// debugging parsing issues.
-    fn display_peek_error(&mut self, token_type: TokenType) {
+    /// versus what was actually found in the peek position. Includes source position
+    /// information for easier debugging.
+    fn display_peek_error(&mut self, expected: TokenType) {
         let msg = format!(
-            "Expected next token be {:?}, got {:?} instead",
-            token_type, self.peek_token.token_type
+            "[line {}:{}] Expected next token to be {:?}, got {:?} ('{}') instead",
+            self.peek_token.line,
+            self.peek_token.column,
+            expected,
+            self.peek_token.token_type,
+            self.peek_token.literal
         );
         self.errors.push(msg);
     }
@@ -147,16 +152,16 @@ impl Parser {
     /// needs to be extended to support new token types.
     fn display_no_parse_function_error(&mut self, token_type: &TokenType) {
         let msg = format!(
-            "No parse function for token type {:?} found for token `{}`",
-            token_type, self.curr_token.literal
+            "[line {}:{}] No parse function for token type {:?} found for token `{}`",
+            self.curr_token.line, self.curr_token.column, token_type, self.curr_token.literal
         );
         self.errors.push(msg);
     }
 
     fn no_prefix_parse_function_error(&mut self, token_type: TokenType) {
         let msg = format!(
-            "No prefix parse function found for token type {:?}",
-            token_type
+            "[line {}:{}] No prefix parse function found for token type {:?} ('{}')",
+            self.curr_token.line, self.curr_token.column, token_type, self.curr_token.literal
         );
         self.errors.push(msg);
     }
@@ -184,17 +189,29 @@ impl Parser {
     /// into a Program node. If parsing of a statement fails, it continues
     /// with the next statement rather than stopping the entire parse.
     pub fn parse_program(&mut self) -> Program {
+        debug!("Starting to parse program");
         let mut program = Program {
             statements: Vec::new(),
         };
         // Loop until EOF is reached
         while self.curr_token.token_type != TokenType::EOF {
+            debug!(
+                "[{}:{}] Parsing statement, curr_token={:?}, peek_token={:?}",
+                self.curr_token.line,
+                self.curr_token.column,
+                self.curr_token.token_type,
+                self.peek_token.token_type
+            );
             let statement = self.parse_statement();
             if let Some(stmt) = statement {
                 program.statements.push(stmt);
             }
             self.next_token();
         }
+        debug!(
+            "Finished parsing program, {} statements parsed",
+            program.statements.len()
+        );
         program
     }
 
@@ -329,10 +346,15 @@ impl Parser {
     /// Adds an error to the parser's error list if no parse function is found for
     /// the current token type.
     fn parse_expression(&mut self, precedence: i32) -> Option<Expression> {
+        debug!(
+            "[{}:{}] parse_expression called with precedence={}, curr_token={:?}",
+            self.curr_token.line, self.curr_token.column, precedence, self.curr_token.token_type
+        );
         let token_type = self.curr_token.token_type.clone();
         let prefix = self.prefix_parse_fns.get(&token_type);
         // If the prefix parse function is found, parse the left-hand side expression and returns an Expression
         let mut left = if let Some(prefix_parse_fn) = prefix {
+            debug!("Found prefix parse function for {:?}", token_type);
             let left_exp = prefix_parse_fn(self)?;
             left_exp
         } else {
@@ -344,9 +366,18 @@ impl Parser {
         while !self.is_peek_token(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             // Extract token type first to end the borrow before mutating self
             let peek_token_type = self.peek_token.token_type.clone();
+            let peek_prec = self.peek_precedence();
+            debug!(
+                "[{}:{}] Continuing infix parsing, peek_token={:?}, peek_precedence={}",
+                self.peek_token.line, self.peek_token.column, peek_token_type, peek_prec
+            );
             let infix = self.infix_parse_fns.get(&peek_token_type).copied();
             // If the infix parse function is not found, return the left-hand side expression
             if infix.is_none() {
+                debug!(
+                    "No infix parse function for {:?}, returning left expression",
+                    peek_token_type
+                );
                 return Some(left);
             }
             self.next_token();
@@ -358,6 +389,7 @@ impl Parser {
             }
         }
 
+        debug!("Finished parsing expression");
         Some(left)
     }
 
@@ -370,29 +402,34 @@ impl Parser {
     ///
     /// # Returns
     /// An `Option<Expression>` containing an `IntegerLiteral` variant if parsing succeeds.
-    /// The function assumes the token literal is a valid integer string (parsing will
-    /// panic if it's not, which should be caught during lexing).
+    /// Returns `None` and adds an error if the token literal cannot be parsed as an integer.
     fn parse_integer_literal(&mut self) -> Option<Expression> {
         let token = self.curr_token.clone();
-        let value = token.literal.parse::<i64>().unwrap();
-        Some(Expression::IntegerLiteral(IntegerLiteral { token, value }))
+        match token.literal.parse::<i64>() {
+            Ok(value) => Some(Expression::IntegerLiteral(IntegerLiteral { token, value })),
+            Err(_) => {
+                self.errors.push(format!(
+                    "[line {}:{}] could not parse {:?} as integer",
+                    token.line, token.column, token.literal
+                ));
+                None
+            }
+        }
     }
     /// Parses a boolean literal expression from the current token.
     ///
-    /// Expects the current token to be of type `TRUE` or `FALSE`. Extracts the boolean value
-    /// from the token's literal string. Returns a `BooleanLiteral` expression node containing
-    /// both the original token information and the parsed boolean value.
+    /// Expects the current token to be of type `TRUE` or `FALSE`. Determines the boolean value
+    /// by checking the token type (matching Go implementation). Returns a `BooleanLiteral`
+    /// expression node containing both the original token information and the parsed boolean value.
     ///
     /// # Returns
     /// An `Option<Expression>` containing a `BooleanLiteral` variant if parsing succeeds.
-    /// The function assumes the token literal is a valid boolean string (parsing will
-    /// panic if it's not, which should be caught during lexing).
     ///
     /// # Errors
-    /// Adds an error to the parser's error list if the token literal is not a valid boolean string.
+    /// Adds an error to the parser's error list if the token type is not TRUE or FALSE.
     fn parse_boolean_literal(&mut self) -> Option<Expression> {
         let token = self.curr_token.clone();
-        let value = self.curr_token.literal.parse::<bool>().unwrap();
+        let value = self.is_curr_token(TokenType::TRUE);
         Some(Expression::BooleanLiteral(BooleanLiteral { token, value }))
     }
 
@@ -406,6 +443,10 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing a `PrefixExpression` variant if parsing succeeds.
     fn parse_prefix_expression(&mut self) -> Option<Expression> {
+        debug!(
+            "Parsing prefix expression with operator {:?}",
+            self.curr_token.token_type
+        );
         let token = self.curr_token.clone();
         let operator = self.curr_token.literal.clone();
 
@@ -413,7 +454,16 @@ impl Parser {
         self.next_token();
 
         // Parse the right-hand expression with PREFIX precedence
-        let right = self.parse_expression(Precedence::PREFIX as i32)?;
+        let right = match self.parse_expression(Precedence::PREFIX as i32) {
+            Some(expr) => expr,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse right-hand expression for prefix operator '{}'",
+                    self.curr_token.line, self.curr_token.column, operator
+                ));
+                return None;
+            }
+        };
 
         Some(Expression::PrefixExpression(PrefixExpression {
             token,
@@ -449,13 +499,14 @@ impl Parser {
     ///
     /// # Returns
     /// An `Option<Expression>` containing an `InfixExpression` variant if parsing succeeds.
-    /// The function assumes the token literal is a valid infix operator string (parsing will
-    /// panic if it's not, which should be caught during lexing).
     ///
     /// # Errors
-    /// Adds an error to the parser's error list if no parse function is found for
-    /// the current token type.
+    /// Adds an error to the parser's error list if parsing the right-hand expression fails.
     fn parse_infix_expression(&mut self, left: Expression) -> Option<Expression> {
+        debug!(
+            "Parsing infix expression with operator {:?}",
+            self.curr_token.token_type
+        );
         // Expects the current token to be an infix operator.
         let token = self.curr_token.clone();
         let operator = self.curr_token.literal.clone();
@@ -467,7 +518,16 @@ impl Parser {
         self.next_token();
 
         // Parse the right-hand side expression with the precedence level and returns an Expression
-        let right = self.parse_expression(precedence)?;
+        let right = match self.parse_expression(precedence) {
+            Some(expr) => expr,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse right-hand expression for infix operator '{}'",
+                    self.curr_token.line, self.curr_token.column, operator
+                ));
+                return None;
+            }
+        };
         Some(Expression::InfixExpression(InfixExpression {
             token,
             left: Box::new(left),
@@ -484,14 +544,25 @@ impl Parser {
     /// An `Option<Expression>` containing an `Expression` variant if parsing succeeds.
     ///
     /// # Errors
-    /// Adds an error to the parser's error list if the right parenthesis is not found.
+    /// Adds an error to the parser's error list if the right parenthesis is not found or expression parsing fails.
     fn parse_grouped_expression(&mut self) -> Option<Expression> {
+        debug!("Parsing grouped expression");
         // Expects the current token to be a left parenthesis. skips it and advances the token
         self.next_token();
 
-        let expr = self.parse_expression(Precedence::LOWEST as i32)?;
+        let expr = match self.parse_expression(Precedence::LOWEST as i32) {
+            Some(e) => e,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse expression inside parentheses",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
 
         if !self.expect_peek(TokenType::RPAREN) {
+            // Error already added by expect_peek
             return None;
         }
 
@@ -505,42 +576,87 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing an `IfExpression` variant if parsing succeeds.
     fn parse_if_expression(&mut self) -> Option<Expression> {
+        debug!("Parsing if expression");
         let token = self.curr_token.clone();
 
         if !self.expect_peek(TokenType::LPAREN) {
+            // Error already added by expect_peek
             return None;
         }
         // Advance to the next token to point to the condition and parse it with the lowest precedence
         self.next_token();
-        let condition = self.parse_expression(Precedence::LOWEST as i32)?;
+        let condition = match self.parse_expression(Precedence::LOWEST as i32) {
+            Some(e) => e,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse condition expression in if statement",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
         // Expects the next token to be a right parenthesis
         if !self.expect_peek(TokenType::RPAREN) {
+            // Error already added by expect_peek
             return None;
         }
         // Expects the next token to be a left brace
         if !self.expect_peek(TokenType::LBRACE) {
+            // Error already added by expect_peek
             return None;
         }
         // Parse the consequence block statement and returns a BlockStatement
-        let consequence = self.parse_block_statement()?;
+        let consequence = match self.parse_block_statement() {
+            Some(Expression::BlockStatement(bs)) => bs,
+            Some(_) => {
+                self.errors.push(format!(
+                    "[line {}:{}] Expected block statement for if consequence",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse consequence block in if statement",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
         // If the next token is an else keyword, parse the alternative block statement
         let alternative = if self.is_peek_token(TokenType::ELSE) {
             self.next_token();
 
             if !self.expect_peek(TokenType::LBRACE) {
+                // Error already added by expect_peek
                 return None;
             }
             // Parse the alternative block statement and returns a BlockStatement
-            let alternative = self.parse_block_statement()?;
-            Some(Box::new(alternative))
+            match self.parse_block_statement() {
+                Some(Expression::BlockStatement(bs)) => Some(Box::new(bs)),
+                Some(_) => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Expected block statement for if alternative",
+                        self.curr_token.line, self.curr_token.column
+                    ));
+                    return None;
+                }
+                None => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Failed to parse alternative block in if statement",
+                        self.curr_token.line, self.curr_token.column
+                    ));
+                    return None;
+                }
+            }
         } else {
             None
         };
         Some(Expression::IfExpression(IfExpression {
             token,
             condition: Box::new(condition),
-            consequence: Box::new(consequence),
-            alternative,
+            consequence: Box::new(Expression::BlockStatement(consequence)),
+            alternative: alternative.map(|bs| Box::new(Expression::BlockStatement(*bs))),
         }))
     }
     /// Parses a block statement (e.g., `{ <statements> }`).
@@ -552,17 +668,27 @@ impl Parser {
     /// An `Option<BlockStatement>` containing a `BlockStatement` variant if parsing succeeds.
     ///
     /// # Errors
-    /// Adds an error to the parser's error list if the right brace is not found.
+    /// Adds an error to the parser's error list if the right brace is not found or statement parsing fails.
     fn parse_block_statement(&mut self) -> Option<Expression> {
+        debug!("Parsing block statement");
         let token = self.curr_token.clone();
         let mut statements = Vec::new();
         // Parse the statements in the block until the right brace is found or EOF is reached
         while !self.is_peek_token(TokenType::RBRACE) && !self.is_peek_token(TokenType::EOF) {
             self.next_token();
-            let stmt = self.parse_statement()?;
-            statements.push(stmt);
+            match self.parse_statement() {
+                Some(stmt) => statements.push(stmt),
+                None => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Failed to parse statement in block",
+                        self.curr_token.line, self.curr_token.column
+                    ));
+                    // Continue parsing to collect more errors
+                }
+            }
         }
         if !self.expect_peek(TokenType::RBRACE) {
+            // Error already added by expect_peek
             return None;
         }
         Some(Expression::BlockStatement(BlockStatement {
@@ -579,17 +705,42 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing a `FunctionLiteral` variant if parsing succeeds.
     fn parse_function_literal(&mut self) -> Option<Expression> {
+        debug!("Parsing function literal");
         let token = self.curr_token.clone();
         if !self.expect_peek(TokenType::LPAREN) {
+            // Error already added by expect_peek
             return None;
         }
-        let parameters = self.parse_function_parameters()?;
+        let parameters = match self.parse_function_parameters() {
+            Some(p) => p,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse function parameters",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
         if !self.expect_peek(TokenType::LBRACE) {
+            // Error already added by expect_peek
             return None;
         }
-        let body = match self.parse_block_statement()? {
-            Expression::BlockStatement(block_stmt) => block_stmt,
-            _ => return None,
+        let body = match self.parse_block_statement() {
+            Some(Expression::BlockStatement(block_stmt)) => block_stmt,
+            Some(_) => {
+                self.errors.push(format!(
+                    "[line {}:{}] Expected block statement for function body",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse function body",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
         };
         Some(Expression::FunctionLiteral(FunctionLiteral {
             token,
@@ -606,6 +757,7 @@ impl Parser {
     /// # Returns
     /// An `Option<Vec<Identifier>>` containing a `Vec<Identifier>` variant if parsing succeeds.
     fn parse_function_parameters(&mut self) -> Option<Vec<Identifier>> {
+        debug!("Parsing function parameters");
         let mut parameters = Vec::new();
         if self.is_peek_token(TokenType::RPAREN) {
             self.next_token();
@@ -615,9 +767,22 @@ impl Parser {
         self.next_token();
 
         // Parse first parameter
-        let first_param = match self.parse_identifier()? {
-            Expression::Identifier(ident) => ident,
-            _ => return None,
+        let first_param = match self.parse_identifier() {
+            Some(Expression::Identifier(ident)) => ident,
+            Some(_) => {
+                self.errors.push(format!(
+                    "[line {}:{}] Expected identifier for function parameter, got {:?}",
+                    self.curr_token.line, self.curr_token.column, self.curr_token.token_type
+                ));
+                return None;
+            }
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse first function parameter",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
         };
         parameters.push(first_param);
 
@@ -626,14 +791,31 @@ impl Parser {
             self.next_token();
             self.next_token();
 
-            let identifier = match self.parse_identifier()? {
-                Expression::Identifier(ident) => ident,
-                _ => return None,
+            let identifier = match self.parse_identifier() {
+                Some(Expression::Identifier(ident)) => ident,
+                Some(_) => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Expected identifier for function parameter after comma got {:?} ('{}') instead",
+                        self.curr_token.line,
+                        self.curr_token.column,
+                        self.curr_token.token_type,
+                        self.curr_token.literal
+                    ));
+                    return None;
+                }
+                None => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Failed to parse function parameter after comma",
+                        self.curr_token.line, self.curr_token.column
+                    ));
+                    return None;
+                }
             };
             parameters.push(identifier);
         }
 
         if !self.expect_peek(TokenType::RPAREN) {
+            // Error already added by expect_peek
             return None;
         }
 
@@ -641,8 +823,18 @@ impl Parser {
     }
 
     fn parse_call_expression(&mut self, function: Expression) -> Option<Expression> {
+        debug!("Parsing call expression");
         let token = self.curr_token.clone();
-        let arguments = self.parse_call_arguments()?;
+        let arguments = match self.parse_call_arguments() {
+            Some(args) => args,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse call arguments",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
         Some(Expression::CallExpression(CallExpression {
             token,
             function: Box::new(function),
@@ -650,6 +842,7 @@ impl Parser {
         }))
     }
     fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {
+        debug!("Parsing call arguments");
         let mut arguments = Vec::new();
 
         if self.is_peek_token(TokenType::RPAREN) {
@@ -658,19 +851,41 @@ impl Parser {
         }
 
         self.next_token();
-        let first_arg = self.parse_expression(Precedence::LOWEST as i32)?;
+        let first_arg = match self.parse_expression(Precedence::LOWEST as i32) {
+            Some(arg) => arg,
+            None => {
+                self.errors.push(format!(
+                    "[line {}:{}] Failed to parse first call argument",
+                    self.curr_token.line, self.curr_token.column
+                ));
+                return None;
+            }
+        };
         arguments.push(first_arg);
 
         while self.is_peek_token(TokenType::COMMA) {
             self.next_token();
             self.next_token();
-            let arg = self.parse_expression(Precedence::LOWEST as i32)?;
+            let arg = match self.parse_expression(Precedence::LOWEST as i32) {
+                Some(arg) => arg,
+                None => {
+                    self.errors.push(format!(
+                        "[line {}:{}] Failed to parse call argument after comma",
+                        self.curr_token.line, self.curr_token.column
+                    ));
+                    return None;
+                }
+            };
             arguments.push(arg);
         }
 
         if !self.expect_peek(TokenType::RPAREN) {
+            // Error already added by expect_peek, but add additional context
             self.errors.push(format!(
-                "expected right parenthesis, got {} instead",
+                "[line {}:{}] expected right parenthesis to close call arguments, got {:?} ('{}') instead",
+                self.peek_token.line,
+                self.peek_token.column,
+                self.peek_token.token_type,
                 self.peek_token.literal
             ));
             return None;
