@@ -80,7 +80,7 @@ pub fn print_parser_errors<W: Write>(output: &mut W, errors: &Vec<String>) -> Re
         "{}",
         "Woops! We ran into some monkey business here!".red().bold()
     )?;
-    writeln!(output, "{}", " parser errors:")?;
+    writeln!(output, " parser errors:")?;
     for error in errors {
         writeln!(output, "  {}{}{}", GRAY, error, RESET)?;
     }

@@ -54,7 +54,7 @@ pub fn repl<R: BufRead, W: Write>(input: R, mut output: W) -> io::Result<()> {
         let program = parser.parse_program();
 
         // If there are parser errors, print them and continue to next iteration
-        if parser.errors.len() > 0 {
+        if !parser.errors.is_empty() {
             print_parser_errors(&mut output, &parser.errors)?;
             continue;
         }

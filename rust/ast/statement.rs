@@ -120,13 +120,13 @@ mod tests {
 
     #[test]
     fn test_let_statement_display_with_value() {
-        let token = Token::new(TokenType::LET, "let".to_string());
+        let token = Token::new(TokenType::LET, "let".to_string(), 1, 1);
         let name = Identifier {
-            token: Token::new(TokenType::IDENT, "x".to_string()),
+            token: Token::new(TokenType::IDENT, "x".to_string(), 1, 5),
             value: "x".to_string(),
         };
         let value_expr = IntegerLiteral {
-            token: Token::new(TokenType::INT, "5".to_string()),
+            token: Token::new(TokenType::INT, "5".to_string(), 1, 9),
             value: 5,
         };
         let value = Expression::IntegerLiteral(value_expr);
@@ -141,9 +141,9 @@ mod tests {
 
     #[test]
     fn test_let_statement_display_without_value() {
-        let token = Token::new(TokenType::LET, "let".to_string());
+        let token = Token::new(TokenType::LET, "let".to_string(), 1, 1);
         let name = Identifier {
-            token: Token::new(TokenType::IDENT, "y".to_string()),
+            token: Token::new(TokenType::IDENT, "y".to_string(), 1, 5),
             value: "y".to_string(),
         };
         let stmt = LetStatement {
@@ -157,9 +157,9 @@ mod tests {
 
     #[test]
     fn test_return_statement_display_with_value() {
-        let token = Token::new(TokenType::RETURN, "return".to_string());
+        let token = Token::new(TokenType::RETURN, "return".to_string(), 1, 1);
         let value_expr = IntegerLiteral {
-            token: Token::new(TokenType::INT, "5".to_string()),
+            token: Token::new(TokenType::INT, "5".to_string(), 1, 8),
             value: 5,
         };
         let value = Expression::IntegerLiteral(value_expr);
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_return_statement_display_without_value() {
-        let token = Token::new(TokenType::RETURN, "return".to_string());
+        let token = Token::new(TokenType::RETURN, "return".to_string(), 1, 1);
         let stmt = ReturnStatement { token, value: None };
         assert_eq!(format!("{}", stmt), "return ;");
     }

@@ -40,23 +40,29 @@ pub enum TokenType {
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
+    pub line: usize,
+    pub column: usize,
 }
 
 impl Token {
-    /// Creates a new Token with the specified token type and literal value.
+    /// Creates a new Token with the specified token type, literal value, and position.
     ///
     /// ## Arguments
     ///
     /// * `token_type` - The type of the token (e.g., IDENT, INT, PLUS, etc.)
     /// * `literal` - The actual string value of the token
+    /// * `line` - The line number where the token starts (1-indexed)
+    /// * `column` - The column number where the token starts (1-indexed)
     ///
     /// ## Returns
     ///
-    /// A new Token instance with the provided type and literal.
-    pub fn new(token_type: TokenType, literal: String) -> Self {
+    /// A new Token instance with the provided type, literal, and position.
+    pub fn new(token_type: TokenType, literal: String, line: usize, column: usize) -> Self {
         Token {
             token_type,
             literal,
+            line,
+            column,
         }
     }
 }

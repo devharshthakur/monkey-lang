@@ -14,3 +14,6 @@ path = "cli/main.rs"
 [dependencies]
 colored = "3.0.0"
 users = "0.11.0"
+log = "0.4.28"
+env_logger = "0.11.8"
+
