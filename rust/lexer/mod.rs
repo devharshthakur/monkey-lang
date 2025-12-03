@@ -124,7 +124,12 @@ impl Lexer {
         while self.is_letter() {
             self.read_char();
         }
-        self.input[start_position..self.curr_position].to_string()
+        let end_position = if self.curr_char == '\0' {
+            self.input.len()
+        } else {
+            self.curr_position
+        };
+        self.input[start_position..end_position].to_string()
     }
 
     /// Gets the current column position.
@@ -144,7 +149,12 @@ impl Lexer {
         while self.is_digit() {
             self.read_char();
         }
-        self.input[start_position..self.curr_position].to_string()
+        let end_position = if self.curr_char == '\0' {
+            self.input.len()
+        } else {
+            self.curr_position
+        };
+        self.input[start_position..end_position].to_string()
     }
 
     /// Returns the next token from the input stream.

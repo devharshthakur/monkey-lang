@@ -300,7 +300,7 @@ fn test_operator_precedence_parsing() {
 /// Tests parsing of if expressions: if (<condition>) <consequence>
 #[test]
 fn test_parsing_if_expression() {
-    let input = "if (x < y) { x }";
+    let input = "if (x < y) { x; };";
     let l = Lexer::new(input.to_string());
     let mut p = Parser::new(l);
     let program = p.parse_program();
@@ -365,7 +365,7 @@ fn test_parsing_if_expression() {
 /// Tests parsing of if-else expressions: if (<condition>) <consequence> else <alternative>
 #[test]
 fn test_parsing_if_else_expression() {
-    let input = "if (x < y) { x } else { y }";
+    let input = "if (x < y) { x; } else { y; };";
     let l = Lexer::new(input.to_string());
     let mut p = Parser::new(l);
     let program = p.parse_program();
@@ -454,7 +454,7 @@ fn test_parsing_if_else_expression() {
 
 #[test]
 fn test_parsing_function_literal() {
-    let input = "fn(x, y) { x + y; }";
+    let input = "fn(x, y) { x + y; };";
     // Create a new lexer and parser
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
@@ -515,7 +515,7 @@ fn test_parsing_function_literal() {
 
 #[test]
 fn test_parsing_function_parameter() {
-    let input = "fn(x, y) { x + y; }";
+    let input = "fn(x, y) { x + y; };";
     // Create a new lexer and parser
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);

@@ -261,10 +261,17 @@ impl Parser {
         self.next_token();
         stmt.value = self.parse_expression(Precedence::LOWEST as i32);
 
-        // Expect semicolon
-        if self.is_peek_token(TokenType::SEMICOLON) {
-            self.next_token();
+        // Require semicolon
+        if !self.is_peek_token(TokenType::SEMICOLON) {
+            panic!(
+                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
+                self.peek_token.line,
+                self.peek_token.column,
+                self.peek_token.token_type,
+                self.peek_token.literal
+            );
         }
+        self.next_token();
 
         Some(stmt)
     }
@@ -285,10 +292,17 @@ impl Parser {
         self.next_token();
         let value = self.parse_expression(Precedence::LOWEST as i32);
 
-        // Expect semicolon
-        if self.is_peek_token(TokenType::SEMICOLON) {
-            self.next_token();
+        // Require semicolon
+        if !self.is_peek_token(TokenType::SEMICOLON) {
+            panic!(
+                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
+                self.peek_token.line,
+                self.peek_token.column,
+                self.peek_token.token_type,
+                self.peek_token.literal
+            );
         }
+        self.next_token();
 
         Some(ReturnStatement { token, value })
     }
@@ -301,16 +315,13 @@ impl Parser {
         Some(Expression::Identifier(Identifier { token, value }))
     }
 
-    /// Parses an expression statement, which is an expression followed by an optional semicolon.
+    /// Parses an expression statement, which is an expression followed by a semicolon.
     ///
     /// An expression statement wraps an expression in a statement context, allowing
-    /// expressions to be used as standalone statements. This is commonly used in REPL
-    /// environments where users can type expressions directly without needing to wrap
-    /// them in a let or return statement.
+    /// expressions to be used as standalone statements.
     ///
     /// The function parses the expression using the lowest precedence level and then
-    /// optionally consumes a semicolon if present. The semicolon is optional to support
-    /// REPL usage where semicolons may be omitted.
+    /// requires a semicolon.
     ///
     /// # Returns
     /// An `ExpressionStatement` containing the parsed expression and its token information.
@@ -321,10 +332,17 @@ impl Parser {
             value: expr,
         };
 
-        // Optional semicolon for REPL
-        if self.is_peek_token(TokenType::SEMICOLON) {
-            self.next_token();
+        // Require semicolon
+        if !self.is_peek_token(TokenType::SEMICOLON) {
+            panic!(
+                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
+                self.peek_token.line,
+                self.peek_token.column,
+                self.peek_token.token_type,
+                self.peek_token.literal
+            );
         }
+        self.next_token();
         Some(stmt)
     }
 
