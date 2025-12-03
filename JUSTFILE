@@ -2,7 +2,7 @@
 
 # Run the project
 run:
-    cd rust && cargo run
+    cd rust && cargo run 2>/dev/null
 
 # Format code
 format:
