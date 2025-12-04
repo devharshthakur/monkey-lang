@@ -145,7 +145,7 @@ impl Parser {
             },
             &self.peek_token,
         );
-        eprintln!("{}", error);
+        debug!("{}", error);
         self.errors.push(error);
     }
 
@@ -157,7 +157,7 @@ impl Parser {
             },
             &self.curr_token,
         );
-        eprintln!("{}", error);
+        debug!("{}", error);
         self.errors.push(error);
     }
 
@@ -265,7 +265,7 @@ impl Parser {
                 },
                 &self.peek_token,
             );
-            eprintln!("{}", error);
+            debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -299,7 +299,7 @@ impl Parser {
                 },
                 &self.peek_token,
             );
-            eprintln!("{}", error);
+            debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -342,7 +342,7 @@ impl Parser {
                 },
                 &self.peek_token,
             );
-            eprintln!("{}", error);
+            debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -436,7 +436,7 @@ impl Parser {
                     },
                     &token,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 None
             }
@@ -489,7 +489,7 @@ impl Parser {
                     },
                     &self.curr_token,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -555,7 +555,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -590,7 +590,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -628,7 +628,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -654,7 +654,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -666,7 +666,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -690,7 +690,7 @@ impl Parser {
                         self.curr_token.line,
                         self.curr_token.column,
                     );
-                    eprintln!("{}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -702,7 +702,7 @@ impl Parser {
                         self.curr_token.line,
                         self.curr_token.column,
                     );
-                    eprintln!("{}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -742,7 +742,7 @@ impl Parser {
                         self.curr_token.line,
                         self.curr_token.column,
                     );
-                    eprintln!("{}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     // Continue parsing to collect more errors
                 }
@@ -780,7 +780,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -799,7 +799,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!(" {}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -809,7 +809,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!(" {}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -849,7 +849,7 @@ impl Parser {
                     },
                     &self.curr_token,
                 );
-                eprintln!("Expected parameter to be an identifier but got: {}", error);
+                log::debug!("Expected parameter to be an identifier but got: {}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -859,7 +859,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("Failed to parse first parameter: {}", error);
+                log::debug!("Failed to parse first parameter: {}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -881,7 +881,7 @@ impl Parser {
                         },
                         &self.curr_token,
                     );
-                    eprintln!(" {}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -893,7 +893,7 @@ impl Parser {
                         self.curr_token.line,
                         self.curr_token.column,
                     );
-                    eprintln!("{}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -920,7 +920,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -949,7 +949,7 @@ impl Parser {
                     self.curr_token.line,
                     self.curr_token.column,
                 );
-                eprintln!("{}", error);
+                debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -969,7 +969,7 @@ impl Parser {
                         self.curr_token.line,
                         self.curr_token.column,
                     );
-                    eprintln!("{}", error);
+                    debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -986,7 +986,7 @@ impl Parser {
                 },
                 &self.peek_token,
             );
-            eprintln!("{}", error);
+            debug!("{}", error);
             self.errors.push(error);
             return None;
         }
