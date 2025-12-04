@@ -35,6 +35,7 @@ use std::collections::HashMap;
 /// The parser maintains a two-token lookahead buffer (current and peek tokens)
 /// to make parsing decisions. It processes tokens sequentially and builds
 /// the AST by parsing different statement types.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Parser {
     l: Lexer,
     curr_token: Token,

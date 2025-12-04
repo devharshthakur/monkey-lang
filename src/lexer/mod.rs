@@ -2,6 +2,7 @@ pub mod token;
 
 use token::{Token, TokenType, lookup_identifier};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Lexer {
     input: String,
     curr_position: usize,
