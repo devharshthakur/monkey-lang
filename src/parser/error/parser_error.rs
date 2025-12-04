@@ -45,7 +45,7 @@ impl ParserError {
         Self::at_token(
             ParserErrorType::ExpectedToken {
                 expected,
-                got: token.token_type.clone(),
+                got: token.token_type,
                 literal: token.literal.clone(),
             },
             token,
@@ -56,7 +56,7 @@ impl ParserError {
     pub fn missing_semicolon(token: &Token) -> Self {
         Self::at_token(
             ParserErrorType::MissingSemicolon {
-                got: token.token_type.clone(),
+                got: token.token_type,
                 literal: token.literal.clone(),
             },
             token,
@@ -67,7 +67,7 @@ impl ParserError {
     pub fn no_prefix_fn(token: &Token) -> Self {
         Self::at_token(
             ParserErrorType::NoPrefixParseFunction {
-                token_type: token.token_type.clone(),
+                token_type: token.token_type,
                 literal: token.literal.clone(),
             },
             token,
@@ -108,7 +108,7 @@ impl ParserError {
     pub fn expected_param_ident(token: &Token) -> Self {
         Self::at_token(
             ParserErrorType::ExpectedParameterIdentifier {
-                got: token.token_type.clone(),
+                got: token.token_type,
                 literal: token.literal.clone(),
             },
             token,
@@ -119,7 +119,7 @@ impl ParserError {
     pub fn unclosed_call(token: &Token) -> Self {
         Self::at_token(
             ParserErrorType::UnclosedCallArguments {
-                got: token.token_type.clone(),
+                got: token.token_type,
                 literal: token.literal.clone(),
             },
             token,

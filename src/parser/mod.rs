@@ -340,7 +340,7 @@ impl Parser {
             "[{}:{}] parse_expression called with precedence={}, curr_token={:?}",
             self.curr_token.line, self.curr_token.column, precedence, self.curr_token.token_type
         );
-        let token_type = self.curr_token.token_type.clone();
+        let token_type = self.curr_token.token_type;
         let prefix = self.prefix_parse_fns.get(&token_type);
         // If the prefix parse function is found, parse the left-hand side expression and returns an Expression
         let mut left = if let Some(prefix_parse_fn) = prefix {
@@ -355,7 +355,7 @@ impl Parser {
         // If the precedence is less than the peek precedence, parse the infix expression
         while !self.is_peek_token(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             // Extract token type first to end the borrow before mutating self
-            let peek_token_type = self.peek_token.token_type.clone();
+            let peek_token_type = self.peek_token.token_type;
             let peek_prec = self.peek_precedence();
             debug!(
                 "[{}:{}] Continuing infix parsing, peek_token={:?}, peek_precedence={}",
@@ -471,8 +471,7 @@ impl Parser {
     /// If no precedence is found, returns the lowest precedence
     fn curr_precedence(&self) -> i32 {
         let token_type = &self.curr_token.token_type.clone();
-        let precedence = Precedence::from_token_type(token_type);
-        precedence
+        Precedence::from_token_type(token_type)
     }
     /// Parses an infix expression (e.g., `5 + 5`, `x == y`).
     ///
