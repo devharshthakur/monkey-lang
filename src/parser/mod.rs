@@ -13,16 +13,16 @@ mod precedence;
 pub mod test_helper;
 
 use crate::ast::{
+    Program,
     expression::{
         BlockStatement, BooleanLiteral, CallExpression, Expression, FunctionLiteral, Identifier,
         IfExpression, InfixExpression, IntegerLiteral, PrefixExpression,
     },
     statement::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
-    Program,
 };
 use crate::lexer::{
-    token::{Token, TokenType},
     Lexer,
+    token::{Token, TokenType},
 };
 use log::debug;
 use precedence::Precedence;

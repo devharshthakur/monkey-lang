@@ -4,8 +4,8 @@
 //! All statement types are consolidated in this module.
 
 use crate::ast::{
-    expression::{Expression, Identifier},
     Node,
+    expression::{Expression, Identifier},
 };
 use crate::lexer::token::Token;
 use std::fmt::{Display, Formatter, Result};

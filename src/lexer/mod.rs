@@ -1,6 +1,6 @@
 pub mod token;
 
-use token::{lookup_identifier, Token, TokenType};
+use token::{Token, TokenType, lookup_identifier};
 
 pub struct Lexer {
     input: String,

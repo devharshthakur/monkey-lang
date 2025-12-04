@@ -2,11 +2,11 @@
 
 # Run the project
 run:
-    cd rust && cargo run 2>/dev/null
+    cargo run 2>/dev/null
 
 # Format code
 format:
-    cd rust && cargo fmt
+    cargo fmt
     prettier --log-level silent --write .
     shfmt -w scripts/bash
 
@@ -15,7 +15,7 @@ fmt: format
 
 # Check formatting
 format-check:
-    cd rust && cargo fmt --check
+    cargo fmt --check
     prettier --ignore-path .gitignore --check .
     shfmt -d scripts/bash
 
@@ -24,18 +24,18 @@ fmtc: format-check
 
 # Run tests
 test:
-    cd rust && cargo test
+    cargo test
 
 # Lint code
 lint:
-    cd rust && cargo clippy
+    cargo clippy
 
 # Alias: l
 l: lint
 
 # Build the project
 build:
-    cd rust && cargo build
+    cargo build
 
 # Pre-commit with test
 pre-commit-with-test:
@@ -56,4 +56,4 @@ pc: pre-commit-without-test
 
 # Clean build artifacts
 clean:
-    cd rust && cargo clean
+    cargo clean

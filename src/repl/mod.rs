@@ -11,7 +11,7 @@
 //! ```
 use crate::{lexer::Lexer, parser::Parser};
 pub use display::MONKEY_LOGO;
-use display::{print_parser_errors, print_welcome, CYAN, GRAY, RESET};
+use display::{CYAN, GRAY, RESET, print_parser_errors, print_welcome};
 use std::io::{self, BufRead, Write};
 mod display;
 

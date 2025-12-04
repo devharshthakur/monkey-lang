@@ -2,9 +2,9 @@
 //! It makes easier to test the parser.
 use super::Parser;
 use crate::ast::{
+    Node,
     expression::{BooleanLiteral, Expression},
     statement::Statement,
-    Node,
 };
 
 /// Its a helper function which tests an integer literal expression.
