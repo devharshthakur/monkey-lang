@@ -25,6 +25,7 @@ use crate::lexer::{
     Lexer,
     token::{Token, TokenType},
 };
+use crate::parser::error::{ParserError, ParserErrorType};
 use log::debug;
 use precedence::Precedence;
 use std::collections::HashMap;
@@ -38,7 +39,7 @@ pub struct Parser {
     l: Lexer,
     curr_token: Token,
     peek_token: Token,
-    pub errors: Vec<String>,
+    pub errors: Vec<ParserError>,
     prefix_parse_fns: HashMap<TokenType, PrefixParseFn>,
     infix_parse_fns: HashMap<TokenType, InfixParseFn>,
 }
@@ -57,7 +58,7 @@ impl Parser {
             l,
             curr_token: Token::new(TokenType::EOF, "".to_string(), 0, 0),
             peek_token: Token::new(TokenType::EOF, "".to_string(), 0, 0),
-            errors: Vec::new(),
+            errors: Vec::<ParserError>::new(),
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
@@ -129,42 +130,21 @@ impl Parser {
         }
     }
 
-    /// Adds a peek error to the parser's error list.
+    /// Adds a peek error to the parser's error list and displays it.
     ///
     /// Creates a descriptive error message indicating what token type was expected
     /// versus what was actually found in the peek position. Includes source position
     /// information for easier debugging.
     fn display_peek_error(&mut self, expected: TokenType) {
-        let msg = format!(
-            "[line {}:{}] Expected next token to be {:?}, got {:?} ('{}') instead",
-            self.peek_token.line,
-            self.peek_token.column,
-            expected,
-            self.peek_token.token_type,
-            self.peek_token.literal
-        );
-        self.errors.push(msg);
+        let error = ParserError::expected_token(expected, &self.peek_token);
+        eprintln!("{}", error);
+        self.errors.push(error);
     }
 
-    /// Adds a "no parse function" error to the parser's error list.
-    ///
-    /// Creates an error message when the parser encounters a token type
-    /// that it doesn't know how to handle. This indicates that the parser
-    /// needs to be extended to support new token types.
-    fn display_no_parse_function_error(&mut self, token_type: &TokenType) {
-        let msg = format!(
-            "[line {}:{}] No parse function for token type {:?} found for token `{}`",
-            self.curr_token.line, self.curr_token.column, token_type, self.curr_token.literal
-        );
-        self.errors.push(msg);
-    }
-
-    fn no_prefix_parse_function_error(&mut self, token_type: TokenType) {
-        let msg = format!(
-            "[line {}:{}] No prefix parse function found for token type {:?} ('{}')",
-            self.curr_token.line, self.curr_token.column, token_type, self.curr_token.literal
-        );
-        self.errors.push(msg);
+    fn no_prefix_parse_function_error(&mut self) {
+        let error = ParserError::no_prefix_fn(&self.curr_token);
+        eprintln!("{}", error);
+        self.errors.push(error);
     }
 
     fn register_prefix_parse_fn(&mut self, token_type: TokenType, parse_fn: PrefixParseFn) {
@@ -179,7 +159,7 @@ impl Parser {
     ///
     /// Allows external code to check if any parsing errors occurred
     /// during the parsing process.
-    pub fn errors(&self) -> &Vec<String> {
+    pub fn errors(&self) -> &Vec<ParserError> {
         &self.errors
     }
 
@@ -264,13 +244,10 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            panic!(
-                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
-                self.peek_token.line,
-                self.peek_token.column,
-                self.peek_token.token_type,
-                self.peek_token.literal
-            );
+            let error = ParserError::missing_semicolon(&self.peek_token);
+            eprintln!("{}", error);
+            self.errors.push(error);
+            return None;
         }
         self.next_token();
 
@@ -295,13 +272,10 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            panic!(
-                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
-                self.peek_token.line,
-                self.peek_token.column,
-                self.peek_token.token_type,
-                self.peek_token.literal
-            );
+            let error = ParserError::missing_semicolon(&self.peek_token);
+            eprintln!("{}", error);
+            self.errors.push(error);
+            return None;
         }
         self.next_token();
 
@@ -335,13 +309,10 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            panic!(
-                "[line {}:{}] Syntax error: expected ';' after statement, got {:?} ('{}')",
-                self.peek_token.line,
-                self.peek_token.column,
-                self.peek_token.token_type,
-                self.peek_token.literal
-            );
+            let error = ParserError::missing_semicolon(&self.peek_token);
+            eprintln!("{}", error);
+            self.errors.push(error);
+            return None;
         }
         self.next_token();
         Some(stmt)
@@ -377,7 +348,7 @@ impl Parser {
             let left_exp = prefix_parse_fn(self)?;
             left_exp
         } else {
-            self.no_prefix_parse_function_error(token_type);
+            self.no_prefix_parse_function_error();
             return None;
         };
 
@@ -427,10 +398,9 @@ impl Parser {
         match token.literal.parse::<i64>() {
             Ok(value) => Some(Expression::IntegerLiteral(IntegerLiteral { token, value })),
             Err(_) => {
-                self.errors.push(format!(
-                    "[line {}:{}] could not parse {:?} as integer",
-                    token.line, token.column, token.literal
-                ));
+                let error = ParserError::invalid_integer(&token);
+                eprintln!("{}", error);
+                self.errors.push(error);
                 None
             }
         }
@@ -476,10 +446,9 @@ impl Parser {
         let right = match self.parse_expression(Precedence::PREFIX as i32) {
             Some(expr) => expr,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse right-hand expression for prefix operator '{}'",
-                    self.curr_token.line, self.curr_token.column, operator
-                ));
+                let error = ParserError::prefix_rhs_failed(&operator, &self.curr_token);
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -540,10 +509,9 @@ impl Parser {
         let right = match self.parse_expression(precedence) {
             Some(expr) => expr,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse right-hand expression for infix operator '{}'",
-                    self.curr_token.line, self.curr_token.column, operator
-                ));
+                let error = ParserError::infix_rhs_failed(&operator, &self.curr_token);
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -572,10 +540,13 @@ impl Parser {
         let expr = match self.parse_expression(Precedence::LOWEST as i32) {
             Some(e) => e,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse expression inside parentheses",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseGroupedExpression,
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -607,10 +578,13 @@ impl Parser {
         let condition = match self.parse_expression(Precedence::LOWEST as i32) {
             Some(e) => e,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse condition expression in if statement",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseIfCondition,
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -628,17 +602,27 @@ impl Parser {
         let consequence = match self.parse_block_statement() {
             Some(Expression::BlockStatement(bs)) => bs,
             Some(_) => {
-                self.errors.push(format!(
-                    "[line {}:{}] Expected block statement for if consequence",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::ExpectedBlockStatement {
+                        context: "if consequence",
+                    },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse consequence block in if statement",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseIfBlock {
+                        context: "consequence",
+                    },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -654,17 +638,27 @@ impl Parser {
             match self.parse_block_statement() {
                 Some(Expression::BlockStatement(bs)) => Some(Box::new(bs)),
                 Some(_) => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Expected block statement for if alternative",
-                        self.curr_token.line, self.curr_token.column
-                    ));
+                    let error = ParserError::at(
+                        ParserErrorType::ExpectedBlockStatement {
+                            context: "if alternative",
+                        },
+                        self.curr_token.line,
+                        self.curr_token.column,
+                    );
+                    eprintln!("{}", error);
+                    self.errors.push(error);
                     return None;
                 }
                 None => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Failed to parse alternative block in if statement",
-                        self.curr_token.line, self.curr_token.column
-                    ));
+                    let error = ParserError::at(
+                        ParserErrorType::FailedToParseIfBlock {
+                            context: "alternative",
+                        },
+                        self.curr_token.line,
+                        self.curr_token.column,
+                    );
+                    eprintln!("{}", error);
+                    self.errors.push(error);
                     return None;
                 }
             }
@@ -698,10 +692,13 @@ impl Parser {
             match self.parse_statement() {
                 Some(stmt) => statements.push(stmt),
                 None => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Failed to parse statement in block",
-                        self.curr_token.line, self.curr_token.column
-                    ));
+                    let error = ParserError::at(
+                        ParserErrorType::FailedToParseStatementInBlock,
+                        self.curr_token.line,
+                        self.curr_token.column,
+                    );
+                    eprintln!("{}", error);
+                    self.errors.push(error);
                     // Continue parsing to collect more errors
                 }
             }
@@ -733,10 +730,13 @@ impl Parser {
         let parameters = match self.parse_function_parameters() {
             Some(p) => p,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse function parameters",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseFunctionParameters,
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -747,17 +747,25 @@ impl Parser {
         let body = match self.parse_block_statement() {
             Some(Expression::BlockStatement(block_stmt)) => block_stmt,
             Some(_) => {
-                self.errors.push(format!(
-                    "[line {}:{}] Expected block statement for function body",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::ExpectedBlockStatement {
+                        context: "function body",
+                    },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!(" {}", error);
+                self.errors.push(error);
                 return None;
             }
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse function body",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseFunctionBody,
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!(" {}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -789,17 +797,19 @@ impl Parser {
         let first_param = match self.parse_identifier() {
             Some(Expression::Identifier(ident)) => ident,
             Some(_) => {
-                self.errors.push(format!(
-                    "[line {}:{}] Expected identifier for function parameter, got {:?}",
-                    self.curr_token.line, self.curr_token.column, self.curr_token.token_type
-                ));
+                let error = ParserError::expected_param_ident(&self.curr_token);
+                eprintln!("Expected parameter to be an identifier but got: {}", error);
+                self.errors.push(error);
                 return None;
             }
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse first function parameter",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseParameter { context: "first" },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("Failed to parse first parameter: {}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -813,20 +823,21 @@ impl Parser {
             let identifier = match self.parse_identifier() {
                 Some(Expression::Identifier(ident)) => ident,
                 Some(_) => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Expected identifier for function parameter after comma got {:?} ('{}') instead",
-                        self.curr_token.line,
-                        self.curr_token.column,
-                        self.curr_token.token_type,
-                        self.curr_token.literal
-                    ));
+                    let error = ParserError::expected_param_ident(&self.curr_token);
+                    eprintln!(" {}", error);
+                    self.errors.push(error);
                     return None;
                 }
                 None => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Failed to parse function parameter after comma",
-                        self.curr_token.line, self.curr_token.column
-                    ));
+                    let error = ParserError::at(
+                        ParserErrorType::FailedToParseParameter {
+                            context: "after comma",
+                        },
+                        self.curr_token.line,
+                        self.curr_token.column,
+                    );
+                    eprintln!("{}", error);
+                    self.errors.push(error);
                     return None;
                 }
             };
@@ -847,10 +858,13 @@ impl Parser {
         let arguments = match self.parse_call_arguments() {
             Some(args) => args,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse call arguments",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseCallArguments,
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -873,10 +887,13 @@ impl Parser {
         let first_arg = match self.parse_expression(Precedence::LOWEST as i32) {
             Some(arg) => arg,
             None => {
-                self.errors.push(format!(
-                    "[line {}:{}] Failed to parse first call argument",
-                    self.curr_token.line, self.curr_token.column
-                ));
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseCallArgument { context: "first" },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
+                eprintln!("{}", error);
+                self.errors.push(error);
                 return None;
             }
         };
@@ -888,10 +905,15 @@ impl Parser {
             let arg = match self.parse_expression(Precedence::LOWEST as i32) {
                 Some(arg) => arg,
                 None => {
-                    self.errors.push(format!(
-                        "[line {}:{}] Failed to parse call argument after comma",
-                        self.curr_token.line, self.curr_token.column
-                    ));
+                    let error = ParserError::at(
+                        ParserErrorType::FailedToParseCallArgument {
+                            context: "after comma",
+                        },
+                        self.curr_token.line,
+                        self.curr_token.column,
+                    );
+                    eprintln!("{}", error);
+                    self.errors.push(error);
                     return None;
                 }
             };
@@ -900,13 +922,9 @@ impl Parser {
 
         if !self.expect_peek(TokenType::RPAREN) {
             // Error already added by expect_peek, but add additional context
-            self.errors.push(format!(
-                "[line {}:{}] expected right parenthesis to close call arguments, got {:?} ('{}') instead",
-                self.peek_token.line,
-                self.peek_token.column,
-                self.peek_token.token_type,
-                self.peek_token.literal
-            ));
+            let error = ParserError::unclosed_call(&self.peek_token);
+            eprintln!("{}", error);
+            self.errors.push(error);
             return None;
         }
 

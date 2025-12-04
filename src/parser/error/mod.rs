@@ -9,7 +9,9 @@ mod span;
 use crate::lexer::token::TokenType;
 pub use parser_error::{ParserError, ParserErrors};
 pub use span::Span;
-use std::fmt;
+use std::fmt::Display;
+use std::fmt::Error;
+use std::fmt::Formatter;
 
 /// All parser error types - centralized and exhaustive.
 ///
@@ -89,8 +91,8 @@ pub enum ParserErrorType {
     },
 }
 
-impl fmt::Display for ParserErrorType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for ParserErrorType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             Self::ExpectedToken {
                 expected,

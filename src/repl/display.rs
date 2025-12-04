@@ -12,6 +12,7 @@
 //!
 //! - `MONKEY_LOGO`: The Monkey logo
 //! - `RESET`: The reset color code
+use crate::parser::error::ParserError;
 use colored::Colorize;
 use std::io::{Result, Write};
 
@@ -73,7 +74,7 @@ pub fn print_welcome() {
 /// # Returns
 /// - `Ok(())` if the errors were printed successfully
 /// - `Err(e)` if an error occurred while printing the errors
-pub fn print_parser_errors<W: Write>(output: &mut W, errors: &Vec<String>) -> Result<()> {
+pub fn print_parser_errors<W: Write>(output: &mut W, errors: &Vec<ParserError>) -> Result<()> {
     writeln!(output, "{}", MONKEY_LOGO.cyan())?;
     writeln!(
         output,
