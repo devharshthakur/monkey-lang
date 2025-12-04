@@ -28,11 +28,6 @@ pub enum Precedence {
 }
 
 impl Precedence {
-    /// Returns the lowest precedence level as a u8.
-    pub const fn lowest() -> u8 {
-        Precedence::LOWEST as u8
-    }
-
     /// Returns the precedence level for a given token type as an i32.
     pub const fn from_token_type(token_type: &TokenType) -> i32 {
         match token_type {

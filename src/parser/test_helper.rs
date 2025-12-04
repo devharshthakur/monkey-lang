@@ -119,7 +119,7 @@ pub fn check_parser_errors(p: &Parser) {
     }
     println!("parser errors:");
 
-    for err in errors {
+    for err in errors.iter() {
         println!("{}", err);
     }
 
