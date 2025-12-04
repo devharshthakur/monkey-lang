@@ -9,6 +9,7 @@
 //! - Provides helpers like `expect_peek`, `is_curr_token`, and `is_peek_token`.
 //! - Reports user-friendly errors via the `errors` vector.
 
+pub mod error;
 mod precedence;
 pub mod test_helper;
 
