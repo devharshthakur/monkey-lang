@@ -136,13 +136,26 @@ impl Parser {
     /// versus what was actually found in the peek position. Includes source position
     /// information for easier debugging.
     fn display_peek_error(&mut self, expected: TokenType) {
-        let error = ParserError::expected_token(expected, &self.peek_token);
+        let error = ParserError::at_token(
+            ParserErrorType::ExpectedToken {
+                expected,
+                got: self.peek_token.token_type,
+                literal: self.peek_token.literal.clone(),
+            },
+            &self.peek_token,
+        );
         eprintln!("{}", error);
         self.errors.push(error);
     }
 
     fn no_prefix_parse_function_error(&mut self) {
-        let error = ParserError::no_prefix_fn(&self.curr_token);
+        let error = ParserError::at_token(
+            ParserErrorType::NoPrefixParseFunction {
+                token_type: self.curr_token.token_type,
+                literal: self.curr_token.literal.clone(),
+            },
+            &self.curr_token,
+        );
         eprintln!("{}", error);
         self.errors.push(error);
     }
@@ -244,7 +257,13 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            let error = ParserError::missing_semicolon(&self.peek_token);
+            let error = ParserError::at_token(
+                ParserErrorType::MissingSemicolon {
+                    got: self.peek_token.token_type,
+                    literal: self.peek_token.literal.clone(),
+                },
+                &self.peek_token,
+            );
             eprintln!("{}", error);
             self.errors.push(error);
             return None;
@@ -272,7 +291,13 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            let error = ParserError::missing_semicolon(&self.peek_token);
+            let error = ParserError::at_token(
+                ParserErrorType::MissingSemicolon {
+                    got: self.peek_token.token_type,
+                    literal: self.peek_token.literal.clone(),
+                },
+                &self.peek_token,
+            );
             eprintln!("{}", error);
             self.errors.push(error);
             return None;
@@ -309,7 +334,13 @@ impl Parser {
 
         // Require semicolon
         if !self.is_peek_token(TokenType::SEMICOLON) {
-            let error = ParserError::missing_semicolon(&self.peek_token);
+            let error = ParserError::at_token(
+                ParserErrorType::MissingSemicolon {
+                    got: self.peek_token.token_type,
+                    literal: self.peek_token.literal.clone(),
+                },
+                &self.peek_token,
+            );
             eprintln!("{}", error);
             self.errors.push(error);
             return None;
@@ -398,7 +429,12 @@ impl Parser {
         match token.literal.parse::<i64>() {
             Ok(value) => Some(Expression::IntegerLiteral(IntegerLiteral { token, value })),
             Err(_) => {
-                let error = ParserError::invalid_integer(&token);
+                let error = ParserError::at_token(
+                    ParserErrorType::InvalidIntegerLiteral {
+                        literal: token.literal.clone(),
+                    },
+                    &token,
+                );
                 eprintln!("{}", error);
                 self.errors.push(error);
                 None
@@ -446,7 +482,12 @@ impl Parser {
         let right = match self.parse_expression(Precedence::PREFIX as i32) {
             Some(expr) => expr,
             None => {
-                let error = ParserError::prefix_rhs_failed(&operator, &self.curr_token);
+                let error = ParserError::at_token(
+                    ParserErrorType::FailedToParsePrefixRHS {
+                        operator: operator.clone(),
+                    },
+                    &self.curr_token,
+                );
                 eprintln!("{}", error);
                 self.errors.push(error);
                 return None;
@@ -470,7 +511,7 @@ impl Parser {
     /// Returns the precedence level for the current token
     /// If no precedence is found, returns the lowest precedence
     fn curr_precedence(&self) -> i32 {
-        let token_type = &self.curr_token.token_type.clone();
+        let token_type = &self.curr_token.token_type;
         Precedence::from_token_type(token_type)
     }
     /// Parses an infix expression (e.g., `5 + 5`, `x == y`).
@@ -508,7 +549,11 @@ impl Parser {
         let right = match self.parse_expression(precedence) {
             Some(expr) => expr,
             None => {
-                let error = ParserError::infix_rhs_failed(&operator, &self.curr_token);
+                let error = ParserError::at(
+                    ParserErrorType::FailedToParseInfixRHS { operator },
+                    self.curr_token.line,
+                    self.curr_token.column,
+                );
                 eprintln!("{}", error);
                 self.errors.push(error);
                 return None;
@@ -796,7 +841,13 @@ impl Parser {
         let first_param = match self.parse_identifier() {
             Some(Expression::Identifier(ident)) => ident,
             Some(_) => {
-                let error = ParserError::expected_param_ident(&self.curr_token);
+                let error = ParserError::at_token(
+                    ParserErrorType::ExpectedParameterIdentifier {
+                        got: self.curr_token.token_type,
+                        literal: self.curr_token.literal.clone(),
+                    },
+                    &self.curr_token,
+                );
                 eprintln!("Expected parameter to be an identifier but got: {}", error);
                 self.errors.push(error);
                 return None;
@@ -822,7 +873,13 @@ impl Parser {
             let identifier = match self.parse_identifier() {
                 Some(Expression::Identifier(ident)) => ident,
                 Some(_) => {
-                    let error = ParserError::expected_param_ident(&self.curr_token);
+                    let error = ParserError::at_token(
+                        ParserErrorType::ExpectedParameterIdentifier {
+                            got: self.curr_token.token_type,
+                            literal: self.curr_token.literal.clone(),
+                        },
+                        &self.curr_token,
+                    );
                     eprintln!(" {}", error);
                     self.errors.push(error);
                     return None;
@@ -921,7 +978,13 @@ impl Parser {
 
         if !self.expect_peek(TokenType::RPAREN) {
             // Error already added by expect_peek, but add additional context
-            let error = ParserError::unclosed_call(&self.peek_token);
+            let error = ParserError::at_token(
+                ParserErrorType::UnclosedCallArguments {
+                    got: self.peek_token.token_type,
+                    literal: self.peek_token.literal.clone(),
+                },
+                &self.peek_token,
+            );
             eprintln!("{}", error);
             self.errors.push(error);
             return None;

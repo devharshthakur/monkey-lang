@@ -7,7 +7,7 @@ mod parser_error;
 mod span;
 
 use crate::lexer::token::TokenType;
-pub use parser_error::{ParserError, ParserErrors};
+pub use parser_error::ParserError;
 pub use span::Span;
 use std::fmt::Display;
 use std::fmt::Error;
