@@ -4,6 +4,13 @@
 run:
     cargo run 2>/dev/null
 
+# Run the Go project
+run-go:
+    cd go && go run main.go
+
+# Alias for run-go
+go: run-go
+
 # Format code
 format:
     cargo fmt

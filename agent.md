@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-<!-- Last generated: 2025-01-29 -->
+<!-- Last generated: 2025-01-30 -->
 
 ## Project Overview
 
@@ -27,7 +27,6 @@ Monkey features C-like syntax with variable bindings, prefix/infix operators, fi
 monkey-lang/
 ├── src/                  # Rust source code
 │   ├── main.rs           # Binary entry point (REPL startup)
-│   ├── lib.rs            # Library root, re-exports modules
 │   ├── lexer/
 │   │   ├── mod.rs        # Lexer implementation
 │   │   └── token.rs      # Token types and definitions
@@ -38,6 +37,10 @@ monkey-lang/
 │   ├── parser/
 │   │   ├── mod.rs        # Pratt parser implementation
 │   │   ├── precedence.rs # Operator precedence definitions
+│   │   ├── error/        # Structured error handling
+│   │   │   ├── mod.rs    # ParserErrorType enum
+│   │   │   ├── parser_error.rs # ParserError struct with span
+│   │   │   └── span.rs   # Span struct for source location
 │   │   └── test_helper.rs # Test utilities for parser tests
 │   ├── repl/
 │   │   ├── mod.rs        # REPL implementation (tokenizes and parses input)
@@ -101,16 +104,19 @@ pnpm install  # Sets up Husky pre-commit hooks
 
 ## Important Commands
 
-| Command                      | Description                               |
-| ---------------------------- | ----------------------------------------- |
-| `just run` / `cargo run`     | Run the REPL                              |
-| `just test` / `cargo test`   | Run all tests                             |
-| `just lint` / `cargo clippy` | Lint code                                 |
-| `just format`                | Format all code (Rust + Prettier + shfmt) |
-| `just build` / `cargo build` | Build the project                         |
-| `just clean` / `cargo clean` | Clean build artifacts                     |
-| `just pc`                    | Pre-commit check (format + lint)          |
-| `just pct`                   | Pre-commit with tests                     |
+| Command                           | Description                               |
+| --------------------------------- | ----------------------------------------- |
+| `just run` / `cargo run`          | Run the REPL                              |
+| `just run-go` / `just go`         | Run the Go reference implementation       |
+| `just test` / `cargo test`        | Run all tests                             |
+| `just lint` / `cargo clippy`      | Lint code                                 |
+| `just format`                     | Format all code (Rust + Prettier + shfmt) |
+| `just format-check` / `just fmtc` | Check formatting without applying         |
+| `just build` / `cargo build`      | Build the project (debug mode)            |
+| `just build-release` / `just br`  | Build the project (release mode)          |
+| `just clean` / `cargo clean`      | Clean build artifacts                     |
+| `just pc`                         | Pre-commit check (format + lint)          |
+| `just pct`                        | Pre-commit with tests                     |
 
 ## Architecture Overview
 
@@ -118,18 +124,21 @@ pnpm install  # Sets up Husky pre-commit hooks
 
 ```text
 src/main.rs → repl → lexer, parser
-src/lib.rs → lexer, ast, parser, repl
-parser → lexer, ast
+parser → lexer, ast, parser::error
+parser::error → lexer::token
 repl → lexer, parser, display
 ```
 
-**Note:** The project uses standard Rust module structure with `src/lib.rs` as the library root. All modules are organized in their respective subdirectories under `src/` and declared using standard `pub mod` declarations.
+**Note:** The project uses a binary-only structure with `src/main.rs` as the entry point. All modules are organized in their respective subdirectories under `src/` and declared using standard `pub mod` declarations.
 
 ### Key Types
 
 - **`Lexer`** - Tokenizes input string into tokens with position tracking
 - **`Token`** / **`TokenType`** - Token representation with line/column position
-- **`Parser`** - Pratt parser producing AST with enhanced error reporting
+- **`Parser`** - Pratt parser producing AST with structured error reporting
+- **`ParserError`** - Structured error type with span (line/column) and error kind
+- **`ParserErrorType`** - Exhaustive enum of all possible parser errors
+- **`Span`** - Source location tracking (line and column)
 - **`Program`** - Root AST node containing statements
 - **`Statement`** - Let, Return, Expression statements
 - **`Expression`** - Identifier, Literals, Prefix/Infix, If, Function, Call
@@ -141,7 +150,11 @@ Uses **Pratt parsing** (top-down operator precedence):
 - Two-token lookahead (`curr_token`, `peek_token`)
 - Prefix/infix parse function registrations via HashMaps
 - Precedence levels defined in `src/parser/precedence.rs`
-- Enhanced error reporting with source position (line/column) in all error messages
+- **Structured error handling** via `parser::error` module:
+  - `ParserError` struct combines error type with source location (`Span`)
+  - `ParserErrorType` enum provides exhaustive error categorization
+  - All errors include `[line X:Y]` format for precise error reporting
+  - Errors collected in `Parser.errors` vector instead of panicking
 - Optional debug tracing via `log` crate (enable with `RUST_LOG=debug`)
 
 ## Current Implementation Status
@@ -155,7 +168,7 @@ Uses **Pratt parsing** (top-down operator precedence):
 - Function literals
 - Grouped expressions (parentheses)
 - Block statements
-- Call expressions
+- Structured parser error handling (ParserError, ParserErrorType, Span)
 - Parser debugging improvements (source position in errors, debug tracing)
 
 **In Progress:**
@@ -164,6 +177,7 @@ Uses **Pratt parsing** (top-down operator precedence):
 
 **Pending:**
 
+- Call expressions (AST type exists, parser function not implemented)
 - Array literals, hash literals, index expressions
 - Expression values in let/return statements
 - Evaluator and object system
@@ -224,3 +238,4 @@ See `CONTRIBUTING.md` for full guidelines.
 6. **Run `just pc`** before commits to ensure formatting and linting pass
 7. **Parser debugging**: All parser errors include `[line X:Y]` format. Enable debug tracing with `RUST_LOG=debug cargo run`
 8. **Token structure**: Token now includes `line` and `column` fields - always provide position when creating tokens
+9. **Error handling**: Use `ParserError::at_token()` or `ParserError::at()` to create errors with proper span information. Never panic - always add errors to `Parser.errors` vector
