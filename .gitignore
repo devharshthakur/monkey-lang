@@ -7,16 +7,3 @@ node_modules
 
 # VS Code workspace files
 monkey-lang.code-workspace
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
-
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
