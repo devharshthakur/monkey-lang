@@ -387,10 +387,10 @@ impl Parser {
         while !self.is_peek_token(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             // Extract token type first to end the borrow before mutating self
             let peek_token_type = self.peek_token.token_type;
-            let peek_prec = self.peek_precedence();
+            let peek_precedence = self.peek_precedence();
             debug!(
                 "[{}:{}] Continuing infix parsing, peek_token={:?}, peek_precedence={}",
-                self.peek_token.line, self.peek_token.column, peek_token_type, peek_prec
+                self.peek_token.line, self.peek_token.column, peek_token_type, peek_precedence
             );
             let infix = self.infix_parse_fns.get(&peek_token_type).copied();
             // If the infix parse function is not found, return the left-hand side expression
