@@ -369,8 +369,8 @@ impl Parser {
         // If the prefix parse function is found, parse the left-hand side expression and returns an Expression
         let mut left = if let Some(prefix_parse_fn) = prefix {
             log::debug!("Found prefix parse function for {:?}", token_type);
-            let left_exp = prefix_parse_fn(self)?;
-            left_exp
+
+            prefix_parse_fn(self)?
         } else {
             self.no_prefix_parse_function_error();
             return None;
@@ -496,8 +496,8 @@ impl Parser {
     /// If no precedence is found, returns the lowest precedence
     fn peek_precedence(&self) -> i32 {
         let token_type = &self.peek_token.token_type;
-        let precedence = Precedence::from_token_type(token_type);
-        precedence
+
+        Precedence::from_token_type(token_type)
     }
 
     /// Returns the precedence level for the current token
@@ -580,7 +580,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse grouped expression"),
+                    "failed to parse grouped expression".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -617,7 +617,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse if condition"),
+                    "failed to parse if condition".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -640,7 +640,7 @@ impl Parser {
             Some(_) => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("expected block statement for if consequence"),
+                    "expected block statement for if consequence".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -649,7 +649,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse if block for consequence"),
+                    "failed to parse if block for consequence".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -670,7 +670,7 @@ impl Parser {
                 Some(_) => {
                     let error = ParserError::at_token(
                         &self.curr_token,
-                        format!("expected block statement for if alternative"),
+                        "expected block statement for if alternative".to_string(),
                     );
                     log::debug!("{}", error);
                     self.errors.push(error);
@@ -679,7 +679,7 @@ impl Parser {
                 None => {
                     let error = ParserError::at_token(
                         &self.curr_token,
-                        format!("failed to parse if block for alternative"),
+                        "failed to parse if block for alternative".to_string(),
                     );
                     log::debug!("{}", error);
                     self.errors.push(error);
@@ -718,7 +718,7 @@ impl Parser {
                 None => {
                     let error = ParserError::at_token(
                         &self.curr_token,
-                        format!("failed to parse statement in block"),
+                        "failed to parse statement in block".to_string(),
                     );
                     log::debug!("{}", error);
                     self.errors.push(error);
@@ -755,7 +755,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse function parameters"),
+                    "failed to parse function parameters".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -771,7 +771,7 @@ impl Parser {
             Some(_) => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("expected block statement for function body"),
+                    "expected block statement for function body".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -780,7 +780,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse function body"),
+                    "failed to parse function body".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -829,7 +829,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse first parameter"),
+                    "failed to parse first parameter".to_string(),
                 );
                 log::debug!("Failed to parse first parameter: {}", error);
                 self.errors.push(error);
@@ -860,7 +860,7 @@ impl Parser {
                 None => {
                     let error = ParserError::at_token(
                         &self.curr_token,
-                        format!("failed to parse parameter after comma"),
+                        "failed to parse parameter after comma".to_string(),
                     );
                     log::debug!("{}", error);
                     self.errors.push(error);
@@ -886,7 +886,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse call arguments"),
+                    "failed to parse call arguments".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -914,7 +914,7 @@ impl Parser {
             None => {
                 let error = ParserError::at_token(
                     &self.curr_token,
-                    format!("failed to parse call argument"),
+                    "failed to parse call argument".to_string(),
                 );
                 log::debug!("{}", error);
                 self.errors.push(error);
@@ -931,7 +931,7 @@ impl Parser {
                 None => {
                     let error = ParserError::at_token(
                         &self.curr_token,
-                        format!("failed to parse call argument after comma"),
+                        "failed to parse call argument after comma".to_string(),
                     );
                     log::debug!("{}", error);
                     self.errors.push(error);
