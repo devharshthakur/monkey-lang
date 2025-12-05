@@ -3,189 +3,102 @@
 //! This module provides structured error types that eliminate scattered format! strings
 //! and enable proper error handling throughout the parser.
 
-mod parser_error;
 mod span;
+use std::fmt;
 
-use crate::lexer::token::TokenType;
-pub use parser_error::ParserError;
+use crate::lexer::token::Token;
 pub use span::Span;
-use std::fmt::Display;
-use std::fmt::Error;
-use std::fmt::Formatter;
 
-/// All parser error types - centralized and exhaustive.
-///
-/// This enum represents every possible error that can occur during parsing.
-/// Each variant contains the necessary context to generate a helpful error message.
+/// A parser error with location and kind.
 #[derive(Debug, Clone, PartialEq)]
-pub enum ParserErrorType {
-    // === Token expectation errors ===
-    ExpectedToken {
-        expected: TokenType,
-        got: TokenType,
-        literal: String,
-    },
-    UnexpectedEOF,
-    MissingSemicolon {
-        got: TokenType,
-        literal: String,
-    },
-
-    // === Parse function errors ===
-    NoPrefixParseFunction {
-        token_type: TokenType,
-        literal: String,
-    },
-    NoInfixParseFunction {
-        token_type: TokenType,
-    },
-
-    // === Literal parsing errors ===
-    InvalidIntegerLiteral {
-        literal: String,
-    },
-
-    // === Expression parsing errors ===
-    FailedToParseExpression {
-        context: &'static str,
-    },
-    FailedToParsePrefixRHS {
-        operator: String,
-    },
-    FailedToParseInfixRHS {
-        operator: String,
-    },
-    FailedToParseGroupedExpression,
-
-    // === If expression errors ===
-    FailedToParseIfCondition,
-    ExpectedBlockStatement {
-        context: &'static str,
-    },
-    FailedToParseIfBlock {
-        context: &'static str,
-    },
-
-    // === Block statement errors ===
-    FailedToParseStatementInBlock,
-
-    // === Function errors ===
-    FailedToParseFunctionParameters,
-    FailedToParseFunctionBody,
-    ExpectedParameterIdentifier {
-        got: TokenType,
-        literal: String,
-    },
-    FailedToParseParameter {
-        context: &'static str,
-    },
-
-    // === Call expression errors ===
-    FailedToParseCallArguments,
-    FailedToParseCallArgument {
-        context: &'static str,
-    },
-    UnclosedCallArguments {
-        got: TokenType,
-        literal: String,
-    },
+pub struct ParserError {
+    pub span: Span,
+    pub message: String,
 }
 
-impl Display for ParserErrorType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match self {
-            Self::ExpectedToken {
-                expected,
-                got,
-                literal,
-            } => {
-                write!(f, "expected {:?}, got {:?} ('{}')", expected, got, literal)
-            }
-            Self::UnexpectedEOF => write!(f, "unexpected end of file"),
-            Self::MissingSemicolon { got, literal } => {
-                write!(
-                    f,
-                    "expected ';' after statement, got {:?} ('{}')",
-                    got, literal
-                )
-            }
-            Self::NoPrefixParseFunction {
-                token_type,
-                literal,
-            } => {
-                write!(
-                    f,
-                    "no prefix parse function for {:?} ('{}')",
-                    token_type, literal
-                )
-            }
-            Self::NoInfixParseFunction { token_type } => {
-                write!(f, "no infix parse function for {:?}", token_type)
-            }
-            Self::InvalidIntegerLiteral { literal } => {
-                write!(f, "could not parse '{}' as integer", literal)
-            }
-            Self::FailedToParseExpression { context } => {
-                write!(f, "failed to parse expression {}", context)
-            }
-            Self::FailedToParsePrefixRHS { operator } => {
-                write!(
-                    f,
-                    "failed to parse expression after prefix operator '{}'",
-                    operator
-                )
-            }
-            Self::FailedToParseInfixRHS { operator } => {
-                write!(
-                    f,
-                    "failed to parse expression after infix operator '{}'",
-                    operator
-                )
-            }
-            Self::FailedToParseGroupedExpression => {
-                write!(f, "failed to parse expression inside parentheses")
-            }
-            Self::FailedToParseIfCondition => {
-                write!(f, "failed to parse condition in if expression")
-            }
-            Self::ExpectedBlockStatement { context } => {
-                write!(f, "expected block statement for {}", context)
-            }
-            Self::FailedToParseIfBlock { context } => {
-                write!(f, "failed to parse {} block in if expression", context)
-            }
-            Self::FailedToParseStatementInBlock => {
-                write!(f, "failed to parse statement in block")
-            }
-            Self::FailedToParseFunctionParameters => {
-                write!(f, "failed to parse function parameters")
-            }
-            Self::FailedToParseFunctionBody => {
-                write!(f, "failed to parse function body")
-            }
-            Self::ExpectedParameterIdentifier { got, literal } => {
-                write!(
-                    f,
-                    "expected identifier for parameter, got {:?} ('{}')",
-                    got, literal
-                )
-            }
-            Self::FailedToParseParameter { context } => {
-                write!(f, "failed to parse {} parameter", context)
-            }
-            Self::FailedToParseCallArguments => {
-                write!(f, "failed to parse call arguments")
-            }
-            Self::FailedToParseCallArgument { context } => {
-                write!(f, "failed to parse {} argument in function call", context)
-            }
-            Self::UnclosedCallArguments { got, literal } => {
-                write!(
-                    f,
-                    "expected ')' to close arguments, got {:?} ('{}')",
-                    got, literal
-                )
-            }
+impl ParserError {
+    /// Create a new parser error with the given message.
+    /// # Parameters
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error with the given message.
+    pub fn new(message: String) -> Self {
+        Self {
+            span: Span::new(0, 0),
+            message,
         }
+    }
+
+    /// Create a new parser error at the given span.
+    /// # Parameters
+    /// - `span`: The span of the error
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error at the given span.
+    pub fn at(span: Span, message: String) -> Self {
+        Self { span, message }
+    }
+
+    /// Create a new parser error at the given token.
+    /// # Parameters
+    /// - `token`: The token at which the error occurred
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error at the given token.
+    pub fn at_token(token: &Token, message: String) -> Self {
+        Self {
+            span: Span::from_token(token),
+            message,
+        }
+    }
+
+    /// Create a new parser error at the given line.
+    /// # Parameters
+    /// - `line`: The line at which the error occurred
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error at the given line.
+    pub fn at_line(line: usize, message: String) -> Self {
+        Self {
+            span: Span::new(line, 0),
+            message,
+        }
+    }
+
+    /// Create a new parser error at the given column.
+    /// # Parameters
+    /// - `column`: The column at which the error occurred
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error at the given column.
+    pub fn at_column(column: usize, message: String) -> Self {
+        Self {
+            span: Span::new(0, column),
+            message,
+        }
+    }
+
+    /// Create a new parser error at the given line and column.
+    /// # Parameters
+    /// - `line`: The line at which the error occurred
+    /// - `column`: The column at which the error occurred
+    /// - `message`: The error message
+    /// # Returns
+    /// A new parser error at the given line and column.
+    pub fn at_line_column(line: usize, column: usize, message: String) -> Self {
+        Self {
+            span: Span::new(line, column),
+            message,
+        }
+    }
+}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "[line {}:{}] {}",
+            self.span.line, self.span.column, self.message
+        )
     }
 }

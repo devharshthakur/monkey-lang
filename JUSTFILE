@@ -1,8 +1,15 @@
 # List all available commands
 
-# Run the project
+# Run the project with debug logging enabled
 run:
-    cargo run 2>/dev/null
+    RUST_LOG=debug cargo run
+
+# Run the project in release mode
+run-release:
+    cargo run --release
+
+# Alias for run-release
+rr: run-release
 
 # Run the Go project
 run-go:

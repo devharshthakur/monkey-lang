@@ -7,3 +7,6 @@ node_modules
 
 # VS Code workspace files
 monkey-lang.code-workspace
+
+# Cursor IDE files
+.cursor/debug.log

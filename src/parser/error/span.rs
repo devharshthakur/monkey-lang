@@ -7,7 +7,7 @@ use std::fmt;
 ///
 /// Represents where an error occurred in the source code,
 /// specifically the line and column position.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Span {
     pub line: usize,
     pub column: usize,

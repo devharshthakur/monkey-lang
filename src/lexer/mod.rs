@@ -219,6 +219,19 @@ impl Lexer {
             ')' => Token::new(TokenType::RPAREN, self.curr_char.to_string(), line, column),
             '{' => Token::new(TokenType::LBRACE, self.curr_char.to_string(), line, column),
             '}' => Token::new(TokenType::RBRACE, self.curr_char.to_string(), line, column),
+            '[' => Token::new(
+                TokenType::LBRACKET,
+                self.curr_char.to_string(),
+                line,
+                column,
+            ),
+            ']' => Token::new(
+                TokenType::RBRACKET,
+                self.curr_char.to_string(),
+                line,
+                column,
+            ),
+            ':' => Token::new(TokenType::COLON, self.curr_char.to_string(), line, column),
             '\0' => Token::new(TokenType::EOF, "".to_string(), line, column),
             _ => {
                 // Handling identifiers and numbers
