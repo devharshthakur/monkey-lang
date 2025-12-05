@@ -19,6 +19,12 @@ Below are the steps to follow:
    - Common sensitive files (`.env`, credentials, API keys, etc.)
    - Build artifacts or temporary files that should be in `.gitignore`
    - If any are detected, warn the user before proceeding
+5. Run pre-commit checks:
+   - Execute `just pc` (pre-commit command) to format and lint the code
+   - If the command fails, inform the user and stop execution
+   - After successful execution, re-check `git status` and `git diff --staged` as formatting may have changed files
+   - If formatting changed files, inform the user that files were auto-formatted
+   - Proceed with commit message generation using the updated diff
 
 ## Commit Message Generation
 
