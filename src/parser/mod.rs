@@ -143,7 +143,7 @@ impl Parser {
                 expected, self.peek_token.token_type
             ),
         );
-        log::error!("{}", error);
+        log::debug!("{}", error);
         self.errors.push(error);
     }
 
@@ -155,7 +155,7 @@ impl Parser {
                 self.curr_token.token_type
             ),
         );
-        log::error!("{}", error);
+        log::debug!("{}", error);
         self.errors.push(error);
     }
 
@@ -182,13 +182,13 @@ impl Parser {
     /// into a Program node. If parsing of a statement fails, it continues
     /// with the next statement rather than stopping the entire parse.
     pub fn parse_program(&mut self) -> Program {
-        log::error!("Starting to parse program");
+        log::info!("Starting to parse program");
         let mut program = Program {
             statements: Vec::new(),
         };
         // Loop until EOF is reached
         while self.curr_token.token_type != TokenType::EOF {
-            log::error!(
+            log::debug!(
                 "[{}:{}] Parsing statement, curr_token={:?}, peek_token={:?}",
                 self.curr_token.line,
                 self.curr_token.column,
@@ -201,7 +201,7 @@ impl Parser {
             }
             self.next_token();
         }
-        log::error!(
+        log::info!(
             "Finished parsing program, {} statements parsed",
             program.statements.len()
         );
@@ -260,7 +260,7 @@ impl Parser {
                 &self.peek_token,
                 format!("missing semicolon, got {:?}", self.peek_token.token_type),
             );
-            log::error!("{}", error);
+            log::debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -291,7 +291,7 @@ impl Parser {
                 &self.peek_token,
                 format!("missing semicolon, got {:?}", self.peek_token.token_type),
             );
-            log::error!("{}", error);
+            log::debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -331,7 +331,7 @@ impl Parser {
                 &self.peek_token,
                 format!("missing semicolon, got {:?}", self.peek_token.token_type),
             );
-            log::error!("{}", error);
+            log::debug!("{}", error);
             self.errors.push(error);
             return None;
         }
@@ -357,7 +357,7 @@ impl Parser {
     /// Adds an error to the parser's error list if no parse function is found for
     /// the current token type.
     fn parse_expression(&mut self, precedence: i32) -> Option<Expression> {
-        log::error!(
+        log::debug!(
             "[{}:{}] parse_expression called with precedence={}, curr_token={:?}",
             self.curr_token.line,
             self.curr_token.column,
@@ -368,7 +368,7 @@ impl Parser {
         let prefix = self.prefix_parse_fns.get(&token_type);
         // If the prefix parse function is found, parse the left-hand side expression and returns an Expression
         let mut left = if let Some(prefix_parse_fn) = prefix {
-            log::error!("Found prefix parse function for {:?}", token_type);
+            log::debug!("Found prefix parse function for {:?}", token_type);
             let left_exp = prefix_parse_fn(self)?;
             left_exp
         } else {
@@ -381,7 +381,7 @@ impl Parser {
             // Extract token type first to end the borrow before mutating self
             let peek_token_type = self.peek_token.token_type;
             let peek_precedence = self.peek_precedence();
-            log::error!(
+            log::debug!(
                 "[{}:{}] Continuing infix parsing, peek_token={:?}, peek_precedence={}",
                 self.peek_token.line,
                 self.peek_token.column,
@@ -391,7 +391,7 @@ impl Parser {
             let infix = self.infix_parse_fns.get(&peek_token_type).copied();
             // If the infix parse function is not found, return the left-hand side expression
             if infix.is_none() {
-                log::error!(
+                log::debug!(
                     "No infix parse function for {:?}, returning left expression",
                     peek_token_type
                 );
@@ -406,7 +406,7 @@ impl Parser {
             }
         }
 
-        log::error!("Finished parsing expression");
+        log::debug!("Finished parsing expression");
         Some(left)
     }
 
@@ -429,7 +429,7 @@ impl Parser {
                     &token,
                     format!("invalid integer literal: {}", token.literal),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 None
             }
@@ -462,7 +462,7 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing a `PrefixExpression` variant if parsing succeeds.
     fn parse_prefix_expression(&mut self) -> Option<Expression> {
-        log::error!(
+        log::debug!(
             "Parsing prefix expression with operator {:?}",
             self.curr_token.token_type
         );
@@ -480,7 +480,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse prefix rhs: {}", operator),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -523,7 +523,7 @@ impl Parser {
     /// # Errors
     /// Adds an error to the parser's error list if parsing the right-hand expression fails.
     fn parse_infix_expression(&mut self, left: Expression) -> Option<Expression> {
-        log::error!(
+        log::debug!(
             "Parsing infix expression with operator {:?}",
             self.curr_token.token_type
         );
@@ -548,7 +548,7 @@ impl Parser {
                         operator
                     ),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -571,7 +571,7 @@ impl Parser {
     /// # Errors
     /// Adds an error to the parser's error list if the right parenthesis is not found or expression parsing fails.
     fn parse_grouped_expression(&mut self) -> Option<Expression> {
-        log::error!("Parsing grouped expression");
+        log::debug!("Parsing grouped expression");
         // Expects the current token to be a left parenthesis. skips it and advances the token
         self.next_token();
 
@@ -582,7 +582,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse grouped expression"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -603,7 +603,7 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing an `IfExpression` variant if parsing succeeds.
     fn parse_if_expression(&mut self) -> Option<Expression> {
-        log::error!("Parsing if expression");
+        log::debug!("Parsing if expression");
         let token = self.curr_token.clone();
 
         if !self.expect_peek(TokenType::LPAREN) {
@@ -619,7 +619,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse if condition"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -642,7 +642,7 @@ impl Parser {
                     &self.curr_token,
                     format!("expected block statement for if consequence"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -651,7 +651,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse if block for consequence"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -672,7 +672,7 @@ impl Parser {
                         &self.curr_token,
                         format!("expected block statement for if alternative"),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -681,7 +681,7 @@ impl Parser {
                         &self.curr_token,
                         format!("failed to parse if block for alternative"),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -707,7 +707,7 @@ impl Parser {
     /// # Errors
     /// Adds an error to the parser's error list if the right brace is not found or statement parsing fails.
     fn parse_block_statement(&mut self) -> Option<Expression> {
-        log::error!("Parsing block statement");
+        log::debug!("Parsing block statement");
         let token = self.curr_token.clone();
         let mut statements = Vec::new();
         // Parse the statements in the block until the right brace is found or EOF is reached
@@ -720,7 +720,7 @@ impl Parser {
                         &self.curr_token,
                         format!("failed to parse statement in block"),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     // Continue parsing to collect more errors
                 }
@@ -744,7 +744,7 @@ impl Parser {
     /// # Returns
     /// An `Option<Expression>` containing a `FunctionLiteral` variant if parsing succeeds.
     fn parse_function_literal(&mut self) -> Option<Expression> {
-        log::error!("Parsing function literal");
+        log::debug!("Parsing function literal");
         let token = self.curr_token.clone();
         if !self.expect_peek(TokenType::LPAREN) {
             // Error already added by expect_peek
@@ -757,7 +757,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse function parameters"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -773,7 +773,7 @@ impl Parser {
                     &self.curr_token,
                     format!("expected block statement for function body"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -782,7 +782,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse function body"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -802,7 +802,7 @@ impl Parser {
     /// # Returns
     /// An `Option<Vec<Identifier>>` containing a `Vec<Identifier>` variant if parsing succeeds.
     fn parse_function_parameters(&mut self) -> Option<Vec<Identifier>> {
-        log::error!("Parsing function parameters");
+        log::debug!("Parsing function parameters");
         let mut parameters = Vec::new();
         if self.is_peek_token(TokenType::RPAREN) {
             self.next_token();
@@ -822,7 +822,7 @@ impl Parser {
                         self.curr_token.token_type
                     ),
                 );
-                log::error!("Expected parameter to be an identifier but got: {}", error);
+                log::debug!("Expected parameter to be an identifier but got: {}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -831,7 +831,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse first parameter"),
                 );
-                log::error!("Failed to parse first parameter: {}", error);
+                log::debug!("Failed to parse first parameter: {}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -853,7 +853,7 @@ impl Parser {
                             self.curr_token.token_type
                         ),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -862,7 +862,7 @@ impl Parser {
                         &self.curr_token,
                         format!("failed to parse parameter after comma"),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -879,7 +879,7 @@ impl Parser {
     }
 
     fn parse_call_expression(&mut self, function: Expression) -> Option<Expression> {
-        log::error!("Parsing call expression");
+        log::debug!("Parsing call expression");
         let token = self.curr_token.clone();
         let arguments = match self.parse_call_arguments() {
             Some(args) => args,
@@ -888,7 +888,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse call arguments"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -900,7 +900,7 @@ impl Parser {
         }))
     }
     fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {
-        log::error!("Parsing call arguments");
+        log::debug!("Parsing call arguments");
         let mut arguments = Vec::new();
 
         if self.is_peek_token(TokenType::RPAREN) {
@@ -916,7 +916,7 @@ impl Parser {
                     &self.curr_token,
                     format!("failed to parse call argument"),
                 );
-                log::error!("{}", error);
+                log::debug!("{}", error);
                 self.errors.push(error);
                 return None;
             }
@@ -933,7 +933,7 @@ impl Parser {
                         &self.curr_token,
                         format!("failed to parse call argument after comma"),
                     );
-                    log::error!("{}", error);
+                    log::debug!("{}", error);
                     self.errors.push(error);
                     return None;
                 }
@@ -950,7 +950,7 @@ impl Parser {
                     self.peek_token.token_type
                 ),
             );
-            log::error!("{}", error);
+            log::debug!("{}", error);
             self.errors.push(error);
             return None;
         }

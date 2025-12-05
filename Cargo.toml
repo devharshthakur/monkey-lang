@@ -6,5 +6,5 @@ edition = "2024"
 [dependencies]
 colored = "3.0.0"
 users = "0.11.0"
-log = "0.4.28"
+log = { version = "0.4.28", features = ["max_level_trace", "release_max_level_off"] }
 env_logger = "0.11.8"
