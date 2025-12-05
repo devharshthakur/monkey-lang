@@ -47,8 +47,8 @@ pub fn print_welcome() {
     println!("{}", format!("Welcome, {}!", username).green().bold());
     println!(
         "{} {}",
-        "Status:".bright_black(),
-        "Currently in development".yellow()
+        "Status:".red(),
+        "🔧 Currently in development".yellow()
     );
     println!(
         "{} {}",
@@ -58,7 +58,7 @@ pub fn print_welcome() {
     println!(
         "{} {}\n",
         "Note:".bright_black(),
-        "Not all features are implemented yet".blue()
+        "📝 Not all features are implemented yet".blue()
     );
 
     println!(
