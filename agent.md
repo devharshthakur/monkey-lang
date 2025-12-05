@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-<!-- Last generated: 2025-12-05 -->
+<!-- Last generated: 2025-01-27 -->
 
 ## Project Overview
 
@@ -48,6 +48,7 @@ monkey-lang/
 │   └── tests/
 │       ├── parser_expression_tests.rs
 │       └── parser_statement_tests.rs
+├── assets/               # Project assets (images, documentation)
 ├── go/                   # Original Go implementation (reference)
 ├── scripts/
 │   ├── ts/setup-rust.ts  # Rust setup helper (TypeScript)
@@ -57,6 +58,7 @@ monkey-lang/
 │   └── setup.md          # Setup instructions
 ├── Cargo.toml            # Rust dependencies and project config
 ├── package.json          # Node.js dev dependencies
+├── tsconfig.json         # TypeScript configuration for scripts
 └── JUSTFILE              # Task runner commands
 ```
 
@@ -108,11 +110,12 @@ pnpm install  # Sets up Husky pre-commit hooks
 
 | Command                           | Description                               |
 | --------------------------------- | ----------------------------------------- |
-| `just run` / `cargo run`          | Run the REPL                              |
+| `just run` / `cargo run`          | Run the REPL (with debug logging)         |
+| `just run-release` / `just rr`    | Run the REPL in release mode              |
 | `just run-go` / `just go`         | Run the Go reference implementation       |
 | `just test` / `cargo test`        | Run all tests                             |
-| `just lint` / `cargo clippy`      | Lint code                                 |
-| `just format`                     | Format all code (Rust + Prettier + shfmt) |
+| `just lint` / `just l`            | Lint code                                 |
+| `just format` / `just fmt`        | Format all code (Rust + Prettier + shfmt) |
 | `just format-check` / `just fmtc` | Check formatting without applying         |
 | `just build` / `cargo build`      | Build the project (debug mode)            |
 | `just build-release` / `just br`  | Build the project (release mode)          |
@@ -164,12 +167,13 @@ Uses **Pratt parsing** (top-down operator precedence):
 **Completed:**
 
 - Full lexer with all tokens and source position tracking
-- Let and Return statement parsing (basic)
+- Let and Return statement parsing (with expression values)
 - Expression parsing: identifiers, integers, booleans, prefix, infix
 - If/else expressions
 - Function literals
 - Grouped expressions (parentheses)
 - Block statements
+- Call expressions
 - Structured parser error handling (ParserError, ParserErrorType, Span)
 - Parser debugging improvements (source position in errors, debug tracing)
 
@@ -179,9 +183,7 @@ Uses **Pratt parsing** (top-down operator precedence):
 
 **Pending:**
 
-- Call expressions (AST type exists, parser function not implemented)
 - Array literals, hash literals, index expressions
-- Expression values in let/return statements
 - Evaluator and object system
 
 See `md/checklist.md` for detailed progress.

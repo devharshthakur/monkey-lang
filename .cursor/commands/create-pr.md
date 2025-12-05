@@ -87,46 +87,11 @@ Create a comprehensive PR description with the following sections:
 - Screenshots or examples (if applicable)
 - Notes for reviewers
 
-## Step 6: Show PR Details and Request Approval
+## Step 6: Request Approval
 
-Before creating the PR, display a summary of all PR details and request user approval:
-
-1. Display the following information clearly using markdown format:
-
-   ```markdown
-   ## Pull Request Details Preview
-
-   ### Repository Information
-
-   - **Source Branch (head)**: `[current branch name]`
-   - **Base Branch (base)**: `[main/master]`
-   - **Repository**: `[owner/repo]`
-
-   ### Title
-
-   [Generated PR title]
-
-   ### Description Preview
-
-   [First 200-300 chars of description]
-
-   ### Statistics
-
-   - **Files Changed**: [X files]
-   - **Commits**: [Y commits]
-
-   ### Summary of Changes
-
-   - **[Category 1]**: [brief description]
-   - **[Category 2]**: [brief description]
-   - ...
-   ```
-
-2. Show the complete PR title and full description body
-3. List the key files that will be changed
-4. Show commit count and commit messages summary
-5. **IMPORTANT**: Explicitly ask: "Do you want to proceed with creating this pull request? (yes/no)"
-6. Wait for user confirmation before proceeding to Step 7
+Ask for approval explicitly as mentioned below  
+"Do you want to proceed with creating this pull request? (yes/no)"  
+Wait for explicit user confirmation before continuing.
 
 ## Step 7: Create the Pull Request
 
