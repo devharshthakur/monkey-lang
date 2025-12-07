@@ -12,7 +12,7 @@
   },
   "author": "Harsh Thakur",
   "license": "MIT",
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.24.0",
   "devDependencies": {
     "@types/node": "^24.10.1",
     "husky": "^9.1.7",
