@@ -75,7 +75,6 @@ pub fn print_welcome() {
 /// - `Ok(())` if the errors were printed successfully
 /// - `Err(e)` if an error occurred while printing the errors
 pub fn print_parser_errors<W: Write>(output: &mut W, errors: &Vec<ParserError>) -> Result<()> {
-    writeln!(output, "{}", MONKEY_LOGO.cyan())?;
     writeln!(
         output,
         "{}",
