@@ -1,6 +1,6 @@
-use monkey_lang::ast::Statement;
-use monkey_lang::lexer::Lexer;
-use monkey_lang::parser::{test_helper::*, Parser};
+use crate::ast::Statement;
+use crate::lexer::Lexer;
+use crate::parser::{Parser, test_helper::*};
 
 // =============================================================================
 // Let Statement Tests

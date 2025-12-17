@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-<!-- Last generated: 2025-01-27 -->
+<!-- Last generated: 2025-12-17 -->
 
 ## Project Overview
 
@@ -14,7 +14,7 @@ Monkey features C-like syntax with variable bindings, prefix/infix operators, fi
 ## Technology Stack
 
 - **Language:** Rust (Edition 2024)
-- **Package Manager:** Cargo (Rust) + pnpm@10.20.0
+- **Package Manager:** Cargo (Rust) + pnpm@10.26.0
 - **Build Tool:** Cargo
 - **Task Runner:** [just](https://github.com/casey/just)
 - **Formatting:** `cargo fmt` + Prettier + shfmt
@@ -77,9 +77,9 @@ monkey-lang/
 
 | Dependency    | Version  | Purpose                                |
 | ------------- | -------- | -------------------------------------- |
-| `@types/node` | ^24.10.1 | TypeScript definitions for Node        |
+| `@types/node` | ^24.10.4 | TypeScript definitions for Node        |
 | `husky`       | ^9.1.7   | Git hooks management                   |
-| `prettier`    | ^3.6.2   | Code formatting (Markdown, JSON, etc.) |
+| `prettier`    | ^3.7.4   | Code formatting (Markdown, JSON, etc.) |
 | `shfmt`       | ^0.0.1   | Bash script formatting                 |
 | `ts-node`     | ^10.9.2  | TypeScript execution environment       |
 | `typescript`  | ^5.9.3   | TypeScript compiler and tooling        |

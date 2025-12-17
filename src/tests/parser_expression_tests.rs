@@ -1,6 +1,6 @@
-use monkey_lang::ast::{expression::Expression, statement::Statement, Node};
-use monkey_lang::lexer::Lexer;
-use monkey_lang::parser::{test_helper::*, Parser};
+use crate::ast::{Node, expression::Expression, statement::Statement};
+use crate::lexer::Lexer;
+use crate::parser::{Parser, test_helper::*};
 
 // =============================================================================
 // Identifier & Integer Literal Tests

@@ -143,7 +143,7 @@ impl Parser {
                 expected, self.peek_token.token_type
             ),
         );
-        log::debug!("{}", error);
+        log::error!("{}", error);
         self.errors.push(error);
     }
 
@@ -188,7 +188,7 @@ impl Parser {
         };
         // Loop until EOF is reached
         while self.curr_token.token_type != TokenType::EOF {
-            log::debug!(
+            log::info!(
                 "[{}:{}] Parsing statement, curr_token={:?}, peek_token={:?}",
                 self.curr_token.line,
                 self.curr_token.column,

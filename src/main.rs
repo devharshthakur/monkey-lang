@@ -1,10 +1,5 @@
-pub mod ast;
-pub mod lexer;
-pub mod parser;
-pub mod repl;
-
 use env_logger::Builder;
-use repl::repl;
+use monkey_lang::repl::repl;
 use std::io;
 
 fn main() -> io::Result<()> {
