@@ -34,26 +34,6 @@ The AST distinguishes between two fundamental concepts:
 
 This distinction is important because statements control program flow and side effects, while expressions compute values.
 
-## Key AST Node Types
-
-### Statements
-
-- **LetStatement**: Variable declarations that bind names to values
-- **ReturnStatement**: Function return statements that exit with a value
-- **ExpressionStatement**: Standalone expressions used as statements
-
-### Expressions
-
-- **Identifier**: Variable and function names
-- **IntegerLiteral**: Numeric constant values
-- **BooleanLiteral**: Boolean constant values (`true`, `false`)
-- **PrefixExpression**: Unary operators (e.g., `!`, `-`)
-- **InfixExpression**: Binary operators (e.g., `+`, `-`, `==`, `!=`)
-- **IfExpression**: Conditional expressions with optional else branches
-- **BlockStatement**: Sequences of statements enclosed in braces
-- **FunctionLiteral**: Function definitions with parameters and body
-- **CallExpression**: Function invocations with arguments
-
 ## Design Principles
 
 ### Immutability
@@ -67,13 +47,6 @@ The AST uses recursive structures (expressions containing expressions, statement
 ### Source Position Tracking
 
 Each AST node retains information about its source position (line and column), enabling precise error reporting and debugging. This information flows from tokens through the parsing process into the AST.
-
-## Relationship to Other Modules
-
-- **Lexer**: Produces tokens that contain the raw source information
-- **Parser**: Consumes tokens and produces AST nodes
-- **Evaluator** (future): Will traverse the AST to execute the program
-- **REPL**: Uses the AST to display parsed program structure
 
 ## Future Considerations
 

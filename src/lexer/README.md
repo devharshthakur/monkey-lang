@@ -67,39 +67,4 @@ When encountering illegal characters, the lexer produces `ILLEGAL` tokens rather
 ### ASCII-First Approach
 
 The current implementation focuses on ASCII characters, which covers the core Monkey language syntax. This can be extended to support Unicode identifiers in the future.
-
-## Relationship to Other Modules
-
-- **Parser**: Consumes the token stream produced by the lexer
-- **AST**: Tokens contain the source information that flows into AST nodes
-- **REPL**: Uses the lexer to tokenize user input before parsing
-
-## Lexical Analysis Phases
-
-The lexer performs several implicit phases:
-
-1. **Character Reading**: Reads characters from input, tracking position
-2. **Whitespace Skipping**: Advances past whitespace without creating tokens
-3. **Pattern Recognition**: Identifies sequences matching language patterns
-4. **Token Creation**: Constructs tokens with appropriate type and position
-5. **Keyword Resolution**: Determines if identifiers are keywords or user identifiers
-
-## Error Handling
-
-The lexer handles errors gracefully by:
-
-- Producing `ILLEGAL` tokens for unrecognized characters
-- Continuing processing after errors to find additional issues
-- Preserving position information for accurate error reporting
-
-## Future Considerations (--ai)
-
-Potential enhancements to the lexer could include:
-
-- Support for string literals (with escape sequences)
-- Support for floating-point numbers
-- Unicode identifier support
-- More sophisticated error recovery
-- Token stream caching for repeated parsing
-
 The lexer's design allows these enhancements without disrupting the existing tokenization logic.

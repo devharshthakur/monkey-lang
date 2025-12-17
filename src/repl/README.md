@@ -37,16 +37,6 @@ Each user input goes through a processing pipeline:
 4. **Error Handling**: Displays parsing errors if any occur
 5. **Output**: Prints the AST representation or error messages
 
-### User Experience Features
-
-The REPL provides several UX enhancements:
-
-- **Welcome Message**: Greets users with a friendly message and project status
-- **Colored Output**: Uses terminal colors for better readability
-- **Error Display**: Shows parsing errors in a clear, formatted way
-- **Prompt**: Provides a visual prompt (`>>`) to indicate readiness for input
-- **Graceful Exit**: Handles exit signals (Ctrl+D, Ctrl+C) gracefully
-
 ## Module Organization
 
 The REPL module consists of:
