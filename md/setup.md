@@ -1,14 +1,14 @@
 # Project Setup
 
-> **Note:** The content of this file may change as the project progresses and the setup process evolves.
+> [!NOTE]
+> The content of this file may change as the project progresses and the setup process evolves.
 
 ## Prerequisites
 
 Before you begin, please ensure you have the following installed:
 
 - [Rust (includes Cargo)](https://www.rust-lang.org/tools/install)
-- (Optional) [just](https://github.com/casey/just) for developer convenience commands
-- (Optional) [pnpm](https://pnpm.io/installation) for formatting and git hooks (Node.js tooling)
+- (Optional) [pnpm](https://pnpm.io/) for developer convenience commands
 
 ## Setting Up Rust
 
@@ -43,44 +43,9 @@ Before you begin, please ensure you have the following installed:
 
 ## Developer Convenience (Optional)
 
-A `JUSTFILE` is provided for common tasks (like running, formatting, testing, and linting). You can use it if you have `just` installed:
+Since this is a rust project , you can run cargo commands as usual from root, but for convenience i have provided `pnpm` scripts you can find them in [here](../package.json).
 
-- To run the project:
-
-  ```
-  just run
-  ```
-
-- To format the codebase:
-
-  ```
-  just format
-  ```
-
-- To run tests:
-
-  ```
-  just test
-  ```
-
-- To lint the code:
-
-  ```
-  just lint
-  ```
-
-- To see all available commands:
-
-  ```
-  just --list
-  ```
-
-### Git Hooks
-
-This project uses [Husky](https://typicode.github.io/husky/) for git hooks. After cloning, run:
-
-```bash
-pnpm install
-```
-
-This will set up pre-commit hooks that automatically format code and run clippy before commits.
+> [!IMPORTANT]
+> This project uses [Husky](https://typicode.github.io/husky/) for git hooks. After cloning, run:
+>  ```pnpm install ```
+> This will set up pre-commit hooks that automatically format code and run clippy before commits.
