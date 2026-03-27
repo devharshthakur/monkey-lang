@@ -4,9 +4,9 @@ First off, thank you for considering contributing to this project! I really appr
 
 ## Getting Started
 
-Before you start contributing, please set up the project locally by ensuring you have Rust and Cargo installed. See the [setup guide](./docs/setup.md) for detailed installation instructions. The [Makefile](./Makefile) is provided for developer convenience to run and manage the project. As the project grows, more commands may be added to the Makefile to help with development and automation.
+Before you start contributing, please set up the project locally by ensuring you have Rust and Cargo installed. See the [setup guide](./md/setup.md) for detailed installation instructions. Use the standard Cargo commands described there to build, test, and run the project.
 
-For an overview of the project's current implementation status, check the [progress checklist](./docs/checklist.md).
+For an overview of the project's current implementation status, check the [progress checklist](./md/checklist.md).
 
 ## Project Context
 
@@ -32,6 +32,34 @@ To keep the project aligned with the book's structure and my learning goals, I a
 
 ## How to Submit Contributions
 
-**Open an Issue**: It's best to open an issue and create a pr. If you can, discuss the changes you'd like to make. This helps to ensure that your contribution is aligned with the project's goals.
+**Open an Issue**: It's best to open an issue before creating a pull request and discuss the changes you'd like to make first. This helps ensure that your contribution is aligned with the project's goals.
+
+## Issue Labels
+
+This project uses a standardized labeling system to track issues and pull requests.
+
+### Labels You Can Use
+
+When creating issues or pull requests, you may only use these conventional commit type labels:
+
+- **`feat`** - New feature or functionality
+- **`fix`** - Bug fix
+- **`chore`** - Maintenance tasks, tooling updates
+- **`docs`** - Documentation improvements
+- **`refactor`** - Code refactoring without behavior changes
+
+### Labels Reserved for Maintainers
+
+The following labels are **only** used by the project maintainer:
+
+- **`issue:accepted`** - Issue has been accepted to be worked on
+- **`issue:working`** - Issue is currently in development
+- **`issue:external`** - Issue created by external contributor
+- **`bug`** - Bug report
+- **`advice`** - Advice or opinion on code/ideas
+- **`priority:high`**, **priority:medium**, **priority:low** - Issue priority
+- **`good first issue`** - Good for newcomers
+
+> **Note**: Issues created by contributors using labels outside the conventional commit types (or using maintainer-only labels) may be closed automatically.
 
 Thank you again for your interest in contributing! I'm excited to learn from your feedback.

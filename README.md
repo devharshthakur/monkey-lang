@@ -18,7 +18,7 @@ Unlike the original implementation in Go, this project is written in **Rust** an
 
 ## Setup, Running & Development
 
-To setup the project refer [SETUP](./md/setup.md) file.
+See the setup guide in [`md/setup.md`](./md/setup.md).
 
 ## Documentation
 

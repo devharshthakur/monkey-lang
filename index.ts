@@ -1,1 +1,1 @@
-console.log("For tsconfig to be happy");
+console.log('For tsconfig to be happy');
