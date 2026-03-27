@@ -47,5 +47,5 @@ Since this is a rust project , you can run cargo commands as usual from root, bu
 
 > [!IMPORTANT]
 > This project uses [Husky](https://typicode.github.io/husky/) for git hooks. After cloning, run:
->  ```pnpm install ```
+> `pnpm install `
 > This will set up pre-commit hooks that automatically format code and run clippy before commits.
