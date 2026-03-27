@@ -3,18 +3,29 @@
   "version": "1.0.0",
   "description": "Monkey programming language interpreter and compiler",
   "scripts": {
-    "format": "prettier --log-level silent --write . && pnpm run format:bash",
-    "format:check": "prettier --ignore-path .gitignore --check .",
+    "dev": "RUST_LOG=debug cargo run",
+    "start": "cargo run --release",
+    "start:go": "cd go && go run main.go",
+    "test": "cargo test",
+    "lint": "cargo clippy",
+    "build": "cargo build",
+    "build:release": "cargo build --release",
+    "format": "cargo fmt && prettier --log-level silent --write .",
+    "format:check": "cargo fmt --check && prettier --ignore-path .gitignore --check .",
+    "clean:rs": "cargo clean",
+    "clean:node": "rimraf node_modules",
+    "precommit": "pnpm run format && pnpm run lint && pnpm run test",
     "prepare": "husky"
   },
   "author": "Harsh Thakur",
   "license": "MIT",
-  "packageManager": "pnpm@10.26.0",
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@types/node": "^25.5.0",
     "husky": "^9.1.7",
     "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "rimraf": "^6.1.3"
   }
 }
