@@ -4,10 +4,7 @@
   "description": "Monkey programming language interpreter and compiler",
   "scripts": {
     "format": "prettier --log-level silent --write . && pnpm run format:bash",
-    "format:bash": "shfmt -w scripts/bash",
-    "format:check": "prettier --ignore-path .gitignore --check . && pnpm run format:check:bash",
-    "format:check:bash": "shfmt -d scripts/bash",
-    "setup:rust": "ts-node scripts/ts/setup-rust.ts",
+    "format:check": "prettier --ignore-path .gitignore --check .",
     "prepare": "husky"
   },
   "author": "Harsh Thakur",

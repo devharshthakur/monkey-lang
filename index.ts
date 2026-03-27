@@ -1,0 +1,1 @@
+console.log("For tsconfig to be happy");

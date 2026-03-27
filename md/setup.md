@@ -14,7 +14,7 @@ Before you begin, please ensure you have the following installed:
 
 1. **Check if Rust is installed:**
 
-   ```bash
+   ```
    rustc --version
    cargo --version
    ```
@@ -22,26 +22,20 @@ Before you begin, please ensure you have the following installed:
    If you see version numbers, Rust and Cargo are installed.
 
 2. **If not installed, install Rust:**
-   - Visit the [official Rust installation page](https://www.rust-lang.org/tools/install) or run:
-
-     ```bash
-     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-     ```
-
-   - Follow the on-screen instructions and restart your terminal after installation.
+   - Visit the [official Rust installation page](https://www.rust-lang.org/tools/install) for installation instructions
 
 ## Running the Project
 
 1. **Clone the repository:**
 
-   ```bash
+   ```
    git clone https://github.com/devharshthakur/monkey-lang.git
    cd monkey-lang
    ```
 
 2. **Run the project:**
 
-   ```bash
+   ```
    cargo run
    ```
 
@@ -53,31 +47,31 @@ A `JUSTFILE` is provided for common tasks (like running, formatting, testing, an
 
 - To run the project:
 
-  ```bash
+  ```
   just run
   ```
 
 - To format the codebase:
 
-  ```bash
+  ```
   just format
   ```
 
 - To run tests:
 
-  ```bash
+  ```
   just test
   ```
 
 - To lint the code:
 
-  ```bash
+  ```
   just lint
   ```
 
 - To see all available commands:
 
-  ```bash
+  ```
   just --list
   ```
 
@@ -90,12 +84,3 @@ pnpm install
 ```
 
 This will set up pre-commit hooks that automatically format code and run clippy before commits.
-
-## Utility Scripts
-
-Automation helpers live under the `scripts/` directory:
-
-- `scripts/ts/setup-rust.ts`: TypeScript helper to bootstrap the Rust toolchain (`pnpm run setup:rust`).
-- `scripts/bash/setup-rust.sh`: Bash equivalent for environments without Node/ts-node.
-
-Check `scripts/README.md` for details on what each script does and how to customize them.
