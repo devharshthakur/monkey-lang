@@ -15,7 +15,6 @@ yarn.lock
 pnpm-lock.yaml
 
 # IDE and editor files
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -56,9 +55,6 @@ Cargo.lock
 # Generated files
 *.generated.*
 *-generated.*
-
-# Documentation
-docs/
 
 # Config files that shouldn't be formatted
 *.toml
