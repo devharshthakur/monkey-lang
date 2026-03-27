@@ -14,11 +14,10 @@
   "license": "MIT",
   "packageManager": "pnpm@10.26.0",
   "devDependencies": {
-    "@types/node": "^24.10.4",
+    "@types/node": "^25.5.0",
     "husky": "^9.1.7",
-    "prettier": "^3.7.4",
-    "shfmt": "^0.0.1",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }
